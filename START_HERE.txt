@@ -1,0 +1,28 @@
+STUDYVERSE 9 — GITHUB UPLOAD PACKAGE
+
+UPLOAD THESE FILES TO THE ROOT OF YOUR GitHub repository.
+
+IMPORTANT:
+- Keep index.html at the repository root.
+- Do NOT upload the ZIP itself to GitHub.
+- config.js contains the Supabase publishable key only.
+- NEVER add a sb_secret_... or service_role key.
+
+After uploading, the repository should contain:
+index.html
+styles.css
+config.js
+app.js
+student.js
+admin.js
+dashboard.html
+chapters.html
+chapter.html
+admin.html
+staff.html
+OPEN_STUDYVERSE9.html
+README.txt
+PHASE9_SETUP.sql
+START_HERE.txt
+
+For Cloudflare Pages, the site root is the repository root.
