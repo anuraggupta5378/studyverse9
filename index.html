@@ -5,56 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>StudyVerse 9 — Login</title>
   <link rel="stylesheet" href="styles.css">
-
-  <style>
-    .otp-panel {
-      display: none;
-    }
-
-    .otp-panel.show {
-      display: block;
-    }
-
-    .auth-panel.hidden {
-      display: none;
-    }
-
-    .otp-input {
-      text-align: center;
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 10px;
-      padding: 14px;
-    }
-
-    .otp-help {
-      margin-top: 10px;
-      font-size: 14px;
-    }
-
-    .resend-btn {
-      margin-top: 12px;
-      background: transparent;
-      border: 0;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    .resend-btn:disabled {
-      cursor: not-allowed;
-      opacity: .5;
-      text-decoration: none;
-    }
-
-    .success-box {
-      text-align: center;
-      padding: 20px 0;
-    }
-
-    .success-icon {
-      font-size: 52px;
-    }
-  </style>
 </head>
 
 <body>
@@ -67,9 +17,7 @@
       StudyVerse 9
     </div>
 
-    <h1>
-      Learn Class 9 with a system that grows with you.
-    </h1>
+    <h1>Learn Class 9 with a system that grows with you.</h1>
 
     <p>
       Mathematics first. Ganita Manjari Part 1 is live,
@@ -78,32 +26,33 @@
     </p>
   </section>
 
-
-  <!-- LOGIN + REGISTER -->
-  <section id="authSection" class="split auth-panel">
+  <section class="split">
 
     <!-- LOGIN -->
     <div class="card">
-      <h2>Sign in</h2>
+
+      <h2>Welcome back</h2>
 
       <form id="login" class="form">
 
         <div>
-          <label>Email</label>
+          <label for="email">Email</label>
           <input
             id="email"
             type="email"
             autocomplete="email"
-            required>
+            required
+          >
         </div>
 
         <div>
-          <label>Password</label>
+          <label for="password">Password</label>
           <input
             id="password"
             type="password"
             autocomplete="current-password"
-            required>
+            required
+          >
         </div>
 
         <button class="btn" type="submit">
@@ -113,133 +62,70 @@
       </form>
 
       <p class="muted">
-        Use the password you created during registration.
+        Sign in to continue your learning journey.
       </p>
+
     </div>
 
 
     <!-- REGISTER -->
     <div class="card">
 
-      <h2>Create student account</h2>
+      <h2>Create your account</h2>
 
       <form id="register" class="form">
 
         <div>
-          <label>Full name</label>
+          <label for="rname">Full name</label>
           <input
             id="rname"
+            type="text"
             autocomplete="name"
-            required>
+            required
+          >
         </div>
 
         <div>
-          <label>Email</label>
+          <label for="remail">Email</label>
           <input
             id="remail"
             type="email"
             autocomplete="email"
-            required>
+            required
+          >
         </div>
 
         <div>
-          <label>Password</label>
+          <label for="rpassword">Password</label>
           <input
             id="rpassword"
             type="password"
             minlength="6"
             autocomplete="new-password"
-            required>
+            required
+          >
+        </div>
+
+        <div>
+          <label for="rpassword2">Confirm password</label>
+          <input
+            id="rpassword2"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+            required
+          >
         </div>
 
         <button class="btn alt" type="submit">
-          Create Account
+          Create account
         </button>
 
       </form>
 
       <p class="tag">
-        Your account starts with the student role.
-        Admin can later promote approved staff accounts.
+        Your account will start with the student role.
       </p>
-
-    </div>
-
-  </section>
-
-
-  <!-- OTP PANEL -->
-  <section id="otpSection" class="card otp-panel">
-
-    <h2>Verify your email</h2>
-
-    <p>
-      We've sent a verification code to:
-    </p>
-
-    <p>
-      <strong id="otpEmail"></strong>
-    </p>
-
-    <form id="otpForm" class="form">
-
-      <div>
-        <label>6-digit verification code</label>
-
-        <input
-          id="otpCode"
-          class="otp-input"
-          inputmode="numeric"
-          autocomplete="one-time-code"
-          maxlength="6"
-          pattern="[0-9]{6}"
-          placeholder="000000"
-          required>
-      </div>
-
-      <button class="btn" type="submit">
-        Verify Code
-      </button>
-
-    </form>
-
-    <p id="otpStatus" class="otp-help muted"></p>
-
-    <button
-      id="resendOtp"
-      class="resend-btn"
-      type="button">
-      Resend code
-    </button>
-
-    <p class="muted">
-      The code normally expires after the configured OTP
-      expiry period. You may need to wait before requesting
-      another code.
-    </p>
-
-  </section>
-
-
-  <!-- SUCCESS PANEL -->
-  <section id="successSection" class="card otp-panel">
-
-    <div class="success-box">
-
-      <div class="success-icon">🎉</div>
-
-      <h2>Welcome to StudyVerse 9!</h2>
-
-      <p id="welcomeMessage">
-        Your account has been verified successfully.
-      </p>
-
-      <button
-        id="continueBtn"
-        class="btn"
-        type="button">
-        Continue to StudyVerse 9
-      </button>
 
     </div>
 
@@ -251,109 +137,30 @@
 <div id="toast" class="toast"></div>
 
 
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script src="config.js"></script>
 <script src="app.js"></script>
 
-
 <script>
 
-let pendingEmail = "";
-let pendingName = "";
+const loginForm = document.getElementById("login");
+const registerForm = document.getElementById("register");
 
 
-/* -----------------------------
-   DOM HELPERS
------------------------------ */
-
-const authSection = document.getElementById("authSection");
-const otpSection = document.getElementById("otpSection");
-const successSection = document.getElementById("successSection");
-
-const otpEmail = document.getElementById("otpEmail");
-const otpCode = document.getElementById("otpCode");
-const otpStatus = document.getElementById("otpStatus");
-
-const resendBtn = document.getElementById("resendOtp");
-
-const welcomeMessage = document.getElementById("welcomeMessage");
-const continueBtn = document.getElementById("continueBtn");
-
-
-/* -----------------------------
-   SHOW / HIDE PANELS
------------------------------ */
-
-function showOtpPanel(email, name) {
-
-  pendingEmail = email;
-  pendingName = name;
-
-  otpEmail.textContent = email;
-
-  authSection.classList.add("hidden");
-
-  otpSection.classList.add("show");
-
-  successSection.classList.remove("show");
-
-  otpCode.value = "";
-  otpCode.focus();
-
-  otpStatus.textContent =
-    "Check your inbox for your StudyVerse 9 verification code.";
-
-}
-
-
-function showSuccessPanel(name) {
-
-  authSection.classList.add("hidden");
-
-  otpSection.classList.remove("show");
-
-  successSection.classList.add("show");
-
-  if (name) {
-
-    welcomeMessage.textContent =
-      "Congratulations, " +
-      name +
-      "! Your StudyVerse 9 account has been successfully verified.";
-
-  } else {
-
-    welcomeMessage.textContent =
-      "Your StudyVerse 9 account has been successfully verified.";
-
-  }
-
-}
-
-
-/* -----------------------------
-   LOGIN
------------------------------ */
-
-document.getElementById("login").onsubmit = async e => {
+// LOGIN
+loginForm.addEventListener("submit", async (e) => {
 
   e.preventDefault();
 
   try {
 
-    const emailValue =
-      document.getElementById("email").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
-    const passwordValue =
-      document.getElementById("password").value;
-
-    const { error } =
-      await sb.auth.signInWithPassword({
-        email: emailValue,
-        password: passwordValue
-      });
+    const { error } = await sb.auth.signInWithPassword({
+      email,
+      password
+    });
 
     if (error) throw error;
 
@@ -361,313 +168,73 @@ document.getElementById("login").onsubmit = async e => {
 
   } catch (err) {
 
-    toast(err.message, "error");
+    toast(err.message || "Unable to sign in.", "error");
 
   }
 
-};
+});
 
 
-/* -----------------------------
-   REGISTER
------------------------------ */
-
-document.getElementById("register").onsubmit = async e => {
+// REGISTER
+registerForm.addEventListener("submit", async (e) => {
 
   e.preventDefault();
 
   try {
 
-    const name =
-      document.getElementById("rname").value.trim();
+    const name = document.getElementById("rname").value.trim();
+    const email = document.getElementById("remail").value.trim();
+    const password = document.getElementById("rpassword").value;
+    const password2 = document.getElementById("rpassword2").value;
 
-    const email =
-      document.getElementById("remail").value.trim();
-
-    const password =
-      document.getElementById("rpassword").value;
-
-
-    if (!name) {
-      throw new Error("Please enter your full name.");
+    if (password !== password2) {
+      throw new Error("Passwords do not match.");
     }
-
 
     if (password.length < 6) {
-      throw new Error(
-        "Password must contain at least 6 characters."
-      );
+      throw new Error("Password must contain at least 6 characters.");
     }
 
-
-    /*
-      We use email OTP authentication.
-
-      signInWithOtp sends the OTP and automatically
-      creates the user if they do not already exist.
-    */
-
-    const { error } =
-      await sb.auth.signInWithOtp({
-
-        email: email,
-
-        options: {
-
-          shouldCreateUser: true,
-
-          data: {
-            full_name: name
-          }
-
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name
         }
-
-      });
-
-
-    if (error) throw error;
-
-
-    showOtpPanel(email, name);
-
-    toast(
-      "Verification code sent to your email.",
-      "success"
-    );
-
-
-  } catch (err) {
-
-    toast(err.message, "error");
-
-  }
-
-};
-
-
-/* -----------------------------
-   VERIFY OTP
------------------------------ */
-
-document.getElementById("otpForm").onsubmit = async e => {
-
-  e.preventDefault();
-
-  try {
-
-    const token =
-      otpCode.value.trim();
-
-
-    if (!/^\d{6}$/.test(token)) {
-
-      throw new Error(
-        "Please enter the 6-digit verification code."
-      );
-
-    }
-
-
-    otpStatus.textContent =
-      "Verifying your code...";
-
-
-    /*
-      Supabase email OTP verification.
-    */
-
-    const { data, error } =
-      await sb.auth.verifyOtp({
-
-        email: pendingEmail,
-
-        token: token,
-
-        type: "email"
-
-      });
-
+      }
+    });
 
     if (error) throw error;
-
 
     if (!data.session) {
-
       throw new Error(
-        "Verification succeeded, but a session was not created. Please try signing in."
+        "Account created, but automatic sign-in is disabled. Please check Supabase Email Confirmation settings."
       );
-
     }
 
+    toast("🎉 Welcome to StudyVerse 9! Your learning journey begins now.", "success");
 
-    showSuccessPanel(pendingName);
-
-    toast(
-      "Email verified successfully!",
-      "success"
-    );
-
+    setTimeout(() => {
+      location.href = "dashboard.html";
+    }, 1200);
 
   } catch (err) {
 
-    otpStatus.textContent =
-      "The verification code could not be verified.";
-
-    toast(err.message, "error");
+    toast(err.message || "Unable to create account.", "error");
 
   }
 
-};
+});
 
 
-/* -----------------------------
-   RESEND OTP
------------------------------ */
-
-let resendCountdown = 0;
-let resendTimer = null;
-
-
-function startResendCountdown(seconds) {
-
-  resendCountdown = seconds;
-
-  resendBtn.disabled = true;
-
-  clearInterval(resendTimer);
-
-
-  resendBtn.textContent =
-    "Resend code in " +
-    resendCountdown +
-    "s";
-
-
-  resendTimer = setInterval(() => {
-
-    resendCountdown--;
-
-
-    if (resendCountdown <= 0) {
-
-      clearInterval(resendTimer);
-
-      resendBtn.disabled = false;
-
-      resendBtn.textContent =
-        "Resend code";
-
-      return;
-
-    }
-
-
-    resendBtn.textContent =
-      "Resend code in " +
-      resendCountdown +
-      "s";
-
-  }, 1000);
-
-}
-
-
-resendBtn.onclick = async () => {
-
-  try {
-
-    if (!pendingEmail) return;
-
-
-    resendBtn.disabled = true;
-
-    otpStatus.textContent =
-      "Sending a new verification code...";
-
-
-    const { error } =
-      await sb.auth.signInWithOtp({
-
-        email: pendingEmail,
-
-        options: {
-
-          shouldCreateUser: false,
-
-          data: {
-            full_name: pendingName
-          }
-
-        }
-
-      });
-
-
-    if (error) throw error;
-
-
-    otpStatus.textContent =
-      "A new verification code has been sent.";
-
-    toast(
-      "New verification code sent.",
-      "success"
-    );
-
-
-    /*
-      Supabase currently defaults to a 60-second
-      OTP request interval.
-    */
-
-    startResendCountdown(60);
-
-
-  } catch (err) {
-
-    resendBtn.disabled = false;
-
-    resendBtn.textContent =
-      "Resend code";
-
-    toast(err.message, "error");
-
-  }
-
-};
-
-
-/* -----------------------------
-   CONTINUE
------------------------------ */
-
-continueBtn.onclick = () => {
-
-  location.href = "dashboard.html";
-
-};
-
-
-/* -----------------------------
-   EXISTING SESSION
------------------------------ */
-
+// If already signed in, go to dashboard
 (async () => {
 
-  try {
+  const u = await currentUser();
 
-    const u = await currentUser();
-
-    if (u) {
-
-      location.href = "dashboard.html";
-
-    }
-
-  } catch (err) {
-
-    console.error(err);
-
+  if (u) {
+    location.href = "dashboard.html";
   }
 
 })();
@@ -675,4 +242,4 @@ continueBtn.onclick = () => {
 </script>
 
 </body>
-                                          </html>
+  </html>
