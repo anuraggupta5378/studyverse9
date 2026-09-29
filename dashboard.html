@@ -1,90 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Dashboard — StudyVerse 9</title>
+  <title>StudyVerse 9 — Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script src="config.js"></script>
   <script src="app.js"></script>
 
-  <link rel="stylesheet" href="brand.css" />
+  <link rel="stylesheet" href="brand.css">
 
   <style>
-    /* ================================
-       STUDYVERSE 9 — DASHBOARD
-       ================================ */
+    /* =====================================================
+       STUDYVERSE 9
+       NEW LEARNING-HUB DASHBOARD
+       ===================================================== */
 
     * {
       box-sizing: border-box;
     }
 
+    :root {
+      --sv-purple: #6b55e9;
+      --sv-blue: #398df4;
+      --sv-cyan: #31c9df;
+      --sv-dark: #17172b;
+      --sv-muted: #85889c;
+      --sv-border: rgba(80, 80, 130, .10);
+      --sv-card: rgba(255, 255, 255, .82);
+      --sv-bg: #f6f8ff;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at 5% 0%,
+          rgba(108, 84, 233, .10),
+          transparent 28%
+        ),
+        radial-gradient(
+          circle at 100% 10%,
+          rgba(49, 201, 223, .09),
+          transparent 25%
+        ),
+        var(--sv-bg);
+      color: var(--sv-dark);
       font-family:
         Inter,
-        ui-sans-serif,
         system-ui,
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
-      background:
-        radial-gradient(circle at 10% 10%, rgba(124, 92, 255, .12), transparent 28%),
-        radial-gradient(circle at 90% 15%, rgba(0, 190, 255, .10), transparent 25%),
-        #f6f8ff;
-      color: #15162b;
       overflow-x: hidden;
     }
 
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    button {
+    button,
+    input {
       font: inherit;
     }
 
-    /* 3D background */
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
     #three-bg {
       position: fixed;
       inset: 0;
       width: 100%;
       height: 100%;
-      z-index: -2;
+      z-index: -10;
       pointer-events: none;
+      opacity: .65;
     }
 
-    .page-glow {
-      position: fixed;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(
-        circle,
-        rgba(120, 85, 255, .12),
-        transparent 68%
-      );
-      top: -220px;
-      right: -180px;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    /* APP */
+    /* =====================================================
+       APP LAYOUT
+       ===================================================== */
 
     .app {
       min-height: 100vh;
       display: flex;
     }
 
-    /* SIDEBAR */
+    /* =====================================================
+       SIDEBAR
+       ===================================================== */
 
     .sidebar {
       width: 250px;
@@ -92,614 +102,736 @@
       position: fixed;
       left: 0;
       top: 0;
-      padding: 24px 16px;
-      background: rgba(255,255,255,.76);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border-right: 1px solid rgba(120,120,170,.12);
-      z-index: 20;
+      z-index: 50;
+
+      display: flex;
+      flex-direction: column;
+
+      padding: 22px 15px;
+
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+
+      border-right: 1px solid var(--sv-border);
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 11px;
-      padding: 8px 10px 28px;
+
+      padding: 5px 10px 27px;
     }
 
     .brand-nine {
-      width: 43px;
-      height: 43px;
+      width: 44px;
+      height: 44px;
+
       display: grid;
       place-items: center;
+
       border-radius: 14px;
+
       color: white;
       font-size: 24px;
       font-weight: 900;
+
       background:
-        linear-gradient(135deg,#7157ff,#398dff 60%,#4ce0e9);
+        linear-gradient(
+          135deg,
+          #7057ed,
+          #398df4 62%,
+          #31c9df
+        );
+
       box-shadow:
-        0 12px 28px rgba(91,92,255,.28);
+        0 13px 28px rgba(88, 78, 220, .25);
     }
 
-    .brand-text strong {
+    .brand-name strong {
       display: block;
       font-size: 17px;
-      letter-spacing: -.4px;
+      letter-spacing: -.5px;
     }
 
-    .brand-text span {
+    .brand-name span {
       display: block;
       margin-top: 2px;
-      font-size: 10px;
+
+      color: #9295a8;
+
+      font-size: 9px;
       font-weight: 800;
       letter-spacing: 1.5px;
-      color: #7d8095;
     }
 
-    .nav-title {
-      padding: 10px 12px;
-      color: #9a9daf;
-      font-size: 10px;
-      font-weight: 800;
+    .nav-heading {
+      padding: 9px 12px;
+
+      color: #a0a2b1;
+
+      font-size: 9px;
+      font-weight: 850;
       letter-spacing: 1.5px;
       text-transform: uppercase;
     }
 
-    .nav {
+    .navigation {
       display: grid;
-      gap: 6px;
+      gap: 4px;
     }
 
-    .nav a,
-    .nav button {
-      width: 100%;
-      border: 0;
-      background: transparent;
-      color: #626579;
+    .navigation a {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 13px;
-      border-radius: 13px;
-      cursor: pointer;
-      text-align: left;
+      gap: 11px;
+
+      padding: 11px 12px;
+
+      border-radius: 12px;
+
+      color: #66697c;
+
+      font-size: 12px;
+      font-weight: 650;
+
       transition: .2s ease;
     }
 
-    .nav a:hover,
-    .nav button:hover {
-      background: rgba(112,87,255,.08);
-      color: #5845d9;
+    .navigation a:hover {
+      background: rgba(107,85,233,.08);
+      color: var(--sv-purple);
       transform: translateX(2px);
     }
 
-    .nav a.active {
-      background: linear-gradient(
-        135deg,
-        rgba(112,87,255,.13),
-        rgba(65,143,255,.09)
-      );
-      color: #5743d8;
-      font-weight: 750;
+    .navigation a.active {
+      color: #5744d1;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(107,85,233,.13),
+          rgba(57,141,244,.08)
+        );
+      font-weight: 800;
     }
 
     .nav-icon {
-      width: 29px;
-      height: 29px;
+      width: 30px;
+      height: 30px;
+
       display: grid;
       place-items: center;
+
       border-radius: 9px;
-      background: rgba(100,100,150,.07);
+
+      background: rgba(100,100,140,.07);
+
       font-size: 15px;
     }
 
-    .sidebar-bottom {
-      position: absolute;
-      left: 16px;
-      right: 16px;
-      bottom: 20px;
+    .navigation a.active .nav-icon {
+      background: rgba(107,85,233,.13);
     }
 
-    .profile-mini {
+    .sidebar-spacer {
+      flex: 1;
+    }
+
+    .student-mini {
       padding: 13px;
-      border: 1px solid rgba(100,100,150,.10);
-      background: rgba(255,255,255,.72);
-      border-radius: 16px;
+
+      border-radius: 17px;
+
+      border: 1px solid var(--sv-border);
+      background: rgba(255,255,255,.65);
     }
 
-    .profile-mini-row {
+    .student-row {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
     .avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+      width: 39px;
+      height: 39px;
+
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg,#6d58ff,#36a4ff);
+
+      border-radius: 12px;
+
       color: white;
+      font-size: 13px;
       font-weight: 850;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--sv-purple),
+          var(--sv-blue)
+        );
     }
 
-    .profile-name {
+    .student-info {
       min-width: 0;
     }
 
-    .profile-name strong {
+    .student-info strong {
       display: block;
-      font-size: 13px;
-      white-space: nowrap;
+
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
+
+      font-size: 12px;
     }
 
-    .profile-name span {
+    .student-info span {
       display: block;
       margin-top: 2px;
-      color: #9295a8;
-      font-size: 10px;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      color: #999cad;
+      font-size: 9px;
     }
 
-    /* MAIN */
+    /* =====================================================
+       MAIN
+       ===================================================== */
 
     .main {
-      margin-left: 250px;
       width: calc(100% - 250px);
-      padding: 28px 34px 50px;
+      margin-left: 250px;
+
+      padding: 25px 32px 55px;
     }
+
+    .mobile-topbar {
+      display: none;
+    }
+
+    /* =====================================================
+       TOPBAR
+       ===================================================== */
 
     .topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 28px;
+      justify-content: space-between;
+
+      margin-bottom: 25px;
     }
 
-    .welcome {
-      color: #888b9d;
-      font-size: 13px;
-      margin-bottom: 4px;
+    .greeting {
+      color: #9093a5;
+      font-size: 12px;
     }
 
-    .page-title {
-      margin: 0;
-      font-size: clamp(26px, 3vw, 38px);
+    .title {
+      margin: 3px 0 0;
+
+      font-size: clamp(26px, 3vw, 37px);
       line-height: 1.05;
-      letter-spacing: -1.5px;
+
+      letter-spacing: -1.7px;
     }
 
-    .page-title span {
-      background: linear-gradient(90deg,#654df0,#258cff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+    .title span {
+      color: var(--sv-purple);
     }
 
     .top-actions {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .icon-btn {
-      width: 43px;
-      height: 43px;
-      border: 1px solid rgba(100,100,150,.11);
+    .top-btn {
+      width: 42px;
+      height: 42px;
+
+      display: grid;
+      place-items: center;
+
+      border: 1px solid var(--sv-border);
+      border-radius: 12px;
+
       background: rgba(255,255,255,.75);
-      border-radius: 13px;
+
       cursor: pointer;
+
       transition: .2s;
     }
 
-    .icon-btn:hover {
+    .top-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(50,60,120,.08);
+      box-shadow: 0 10px 25px rgba(40,50,100,.08);
     }
 
-    /* HERO */
+    /* =====================================================
+       HERO
+       ===================================================== */
 
     .hero {
       position: relative;
       overflow: hidden;
-      min-height: 270px;
-      padding: 34px;
-      border-radius: 28px;
+
+      min-height: 245px;
+
+      padding: 31px;
+
+      border-radius: 27px;
+
       color: white;
+
       background:
-        radial-gradient(circle at 80% 20%, rgba(111,230,255,.22), transparent 30%),
-        radial-gradient(circle at 60% 120%, rgba(115,81,255,.35), transparent 42%),
-        linear-gradient(125deg,#17152f,#30256c 55%,#1267ad);
+        radial-gradient(
+          circle at 82% 20%,
+          rgba(55,210,238,.25),
+          transparent 28%
+        ),
+        radial-gradient(
+          circle at 70% 110%,
+          rgba(117,76,255,.38),
+          transparent 42%
+        ),
+        linear-gradient(
+          120deg,
+          #17172f,
+          #332871 55%,
+          #126ea9
+        );
+
       box-shadow:
-        0 24px 60px rgba(52,47,130,.20);
-      isolation: isolate;
+        0 25px 60px rgba(50,45,130,.18);
     }
 
     .hero::before {
       content: "";
+
       position: absolute;
-      width: 310px;
-      height: 310px;
-      border: 1px solid rgba(255,255,255,.13);
+
+      width: 330px;
+      height: 330px;
+
+      right: -80px;
+      top: -150px;
+
       border-radius: 50%;
-      right: -70px;
-      top: -120px;
+
+      border: 1px solid rgba(255,255,255,.13);
+
       box-shadow:
         0 0 0 35px rgba(255,255,255,.025),
-        0 0 0 75px rgba(255,255,255,.018);
-      pointer-events: none;
+        0 0 0 75px rgba(255,255,255,.018),
+        0 0 0 115px rgba(255,255,255,.012);
     }
 
-    .hero::after {
-      content: "∑  π  √  x²  ∞";
+    .hero-symbols {
       position: absolute;
-      right: 40px;
-      bottom: 35px;
-      font-size: 22px;
-      letter-spacing: 15px;
-      color: rgba(255,255,255,.13);
+
+      right: 50px;
+      bottom: 34px;
+
+      color: rgba(255,255,255,.12);
+
+      font-size: 27px;
+      letter-spacing: 17px;
+
       transform: rotate(-8deg);
-      pointer-events: none;
     }
 
     .hero-content {
       position: relative;
       z-index: 2;
+
       max-width: 650px;
     }
 
-    .hero-badge {
+    .hero-label {
       display: inline-flex;
       align-items: center;
       gap: 7px;
+
       padding: 7px 11px;
+
+      border: 1px solid rgba(255,255,255,.13);
       border-radius: 999px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.14);
-      font-size: 10px;
-      font-weight: 800;
+
+      background: rgba(255,255,255,.09);
+
+      font-size: 9px;
+      font-weight: 850;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
 
     .hero h2 {
-      margin: 18px 0 10px;
-      font-size: clamp(28px,4vw,46px);
+      margin: 16px 0 9px;
+
+      font-size: clamp(27px, 4vw, 44px);
       line-height: 1.03;
+
       letter-spacing: -2px;
     }
 
     .hero p {
+      max-width: 580px;
+
       margin: 0;
-      max-width: 570px;
-      color: rgba(255,255,255,.76);
+
+      color: rgba(255,255,255,.72);
+
+      font-size: 13px;
       line-height: 1.6;
-      font-size: 14px;
     }
 
-    .hero-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 23px;
-      flex-wrap: wrap;
-    }
-
-    .hero-btn {
+    .hero-button {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      border: 0;
-      border-radius: 12px;
+
+      margin-top: 21px;
       padding: 11px 16px;
-      font-size: 12px;
-      font-weight: 800;
+
+      border: 0;
+      border-radius: 11px;
+
+      background: white;
+      color: #382d83;
+
+      font-size: 11px;
+      font-weight: 850;
+
       cursor: pointer;
+
       transition: .2s;
     }
 
-    .hero-btn.primary {
-      background: white;
-      color: #332b78;
-    }
-
-    .hero-btn.secondary {
-      color: white;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.18);
-    }
-
-    .hero-btn:hover {
+    .hero-button:hover {
       transform: translateY(-2px);
     }
 
-    /* STATS */
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4,1fr);
-      gap: 14px;
-      margin: 18px 0;
-    }
-
-    .stat {
-      padding: 19px;
-      border-radius: 19px;
-      background: rgba(255,255,255,.78);
-      border: 1px solid rgba(100,100,150,.10);
-      box-shadow: 0 12px 35px rgba(50,60,120,.05);
-    }
-
-    .stat-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .stat-icon {
-      width: 35px;
-      height: 35px;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      background: rgba(102,78,240,.09);
-    }
-
-    .stat-label {
-      color: #8c8fa1;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .stat-value {
-      margin-top: 11px;
-      font-size: 25px;
-      font-weight: 850;
-      letter-spacing: -.8px;
-    }
-
-    .stat-sub {
-      margin-top: 3px;
-      color: #a0a2b2;
-      font-size: 10px;
-    }
-
-    /* SECTIONS */
+    /* =====================================================
+       SECTION
+       ===================================================== */
 
     .section {
-      margin-top: 28px;
+      margin-top: 27px;
     }
 
-    .section-head {
+    .section-heading {
       display: flex;
+      align-items: end;
       justify-content: space-between;
-      align-items: center;
+
       margin-bottom: 13px;
     }
 
-    .section-title {
+    .section-heading h2 {
       margin: 0;
+
       font-size: 19px;
       letter-spacing: -.5px;
     }
 
-    .section-link {
-      color: #6350df;
-      font-size: 11px;
-      font-weight: 800;
+    .section-heading p {
+      margin: 3px 0 0;
+
+      color: #9497a8;
+      font-size: 10px;
     }
 
-    /* CONTINUE */
+    .view-all {
+      color: var(--sv-purple);
 
-    .continue-card {
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    /* =====================================================
+       LEARNING TOOLS
+       ===================================================== */
+
+    .tool-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+      gap: 13px;
+    }
+
+    .tool-card {
+      position: relative;
+
+      min-height: 145px;
+
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: space-between;
-      gap: 20px;
-      padding: 20px;
-      border-radius: 20px;
-      background: rgba(255,255,255,.78);
-      border: 1px solid rgba(100,100,150,.10);
-      box-shadow: 0 12px 35px rgba(50,60,120,.05);
+
+      padding: 17px;
+
+      overflow: hidden;
+
+      border: 1px solid var(--sv-border);
+      border-radius: 19px;
+
+      background: var(--sv-card);
+
+      box-shadow:
+        0 12px 35px rgba(45,55,120,.045);
+
+      cursor: pointer;
+
+      transition:
+        transform .24s ease,
+        box-shadow .24s ease,
+        border-color .24s ease;
     }
 
-    .continue-left {
+    .tool-card::after {
+      content: "";
+
+      position: absolute;
+
+      width: 90px;
+      height: 90px;
+
+      right: -35px;
+      bottom: -45px;
+
+      border-radius: 50%;
+
+      background: var(--tool-glow, rgba(107,85,233,.08));
+    }
+
+    .tool-card:hover {
+      transform: translateY(-5px);
+
+      border-color: rgba(107,85,233,.18);
+
+      box-shadow:
+        0 22px 45px rgba(45,55,120,.10);
+    }
+
+    .tool-icon {
+      width: 43px;
+      height: 43px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 13px;
+
+      background:
+        var(--tool-bg, rgba(107,85,233,.11));
+
+      font-size: 20px;
+    }
+
+    .tool-name {
+      margin-top: 12px;
+
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .tool-description {
+      margin-top: 4px;
+
+      color: #9699aa;
+
+      font-size: 9px;
+      line-height: 1.4;
+    }
+
+    .tool-arrow {
+      position: absolute;
+
+      right: 15px;
+      top: 18px;
+
+      color: #a1a3b1;
+
+      font-size: 13px;
+    }
+
+    /* =====================================================
+       LIBRARY
+       ===================================================== */
+
+    .library-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+      gap: 13px;
+    }
+
+    .library-card {
+      position: relative;
+
       display: flex;
       align-items: center;
       gap: 15px;
-      min-width: 0;
-    }
 
-    .continue-icon {
-      flex: 0 0 auto;
-      width: 52px;
-      height: 52px;
-      display: grid;
-      place-items: center;
-      border-radius: 15px;
-      color: white;
-      font-size: 21px;
-      background: linear-gradient(135deg,#6b55ed,#3b9eff);
-    }
-
-    .continue-info {
-      min-width: 0;
-    }
-
-    .continue-info small {
-      color: #8f92a4;
-      font-size: 10px;
-      font-weight: 700;
-    }
-
-    .continue-info strong {
-      display: block;
-      margin-top: 3px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 14px;
-    }
-
-    .progress-wrap {
-      width: 180px;
-    }
-
-    .progress-top {
-      display: flex;
-      justify-content: space-between;
-      color: #8d90a0;
-      font-size: 10px;
-      margin-bottom: 6px;
-    }
-
-    .progress-bar {
-      height: 7px;
-      background: #ececf5;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      width: 0%;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg,#7058ee,#37a6ff);
-      transition: width .5s ease;
-    }
-
-    .continue-btn {
-      border: 0;
-      background: #15142a;
-      color: white;
-      padding: 11px 15px;
-      border-radius: 11px;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    /* CHAPTER GRID */
-
-    .chapter-grid {
-      display: grid;
-      grid-template-columns: repeat(4,1fr);
-      gap: 14px;
-    }
-
-    .chapter-card {
-      position: relative;
-      min-height: 185px;
       padding: 18px;
-      overflow: hidden;
-      border-radius: 20px;
+
+      border: 1px solid var(--sv-border);
+      border-radius: 19px;
+
       background: rgba(255,255,255,.80);
-      border: 1px solid rgba(100,100,150,.10);
-      box-shadow: 0 12px 35px rgba(50,60,120,.05);
-      transition:
-        transform .25s ease,
-        box-shadow .25s ease;
+
       cursor: pointer;
+
+      transition: .22s;
     }
 
-    .chapter-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 45px rgba(50,60,120,.11);
+    .library-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 35px rgba(40,50,100,.07);
     }
 
-    .chapter-number {
-      width: 38px;
-      height: 38px;
+    .book-icon {
+      width: 53px;
+      height: 63px;
+
+      flex: 0 0 auto;
+
       display: grid;
       place-items: center;
-      border-radius: 12px;
-      color: #5945db;
+
+      border-radius: 9px 13px 13px 9px;
+
+      color: white;
+
+      font-size: 22px;
       font-weight: 900;
-      background: linear-gradient(
-        135deg,
-        rgba(111,84,240,.12),
-        rgba(53,155,255,.10)
-      );
+
+      background:
+        linear-gradient(
+          145deg,
+          #6d55e9,
+          #358fe8
+        );
+
+      box-shadow:
+        inset 4px 0 rgba(0,0,0,.08);
     }
 
-    .chapter-card h3 {
-      margin: 17px 0 7px;
+    .library-info {
+      min-width: 0;
+    }
+
+    .library-info small {
+      color: #9295a6;
+
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .library-info h3 {
+      margin: 5px 0 3px;
+
       font-size: 14px;
-      line-height: 1.35;
     }
 
-    .chapter-card p {
+    .library-info p {
       margin: 0;
-      color: #9295a7;
-      font-size: 10px;
-      line-height: 1.5;
+
+      color: #9699aa;
+
+      font-size: 9px;
     }
 
-    .chapter-card .mini-progress {
-      position: absolute;
-      left: 18px;
-      right: 18px;
-      bottom: 17px;
+    .coming {
+      display: inline-block;
+
+      margin-top: 6px;
+      padding: 3px 7px;
+
+      border-radius: 999px;
+
+      color: #7c7895;
+
+      background: #f0eff8;
+
+      font-size: 8px;
+      font-weight: 800;
     }
 
-    .mini-progress-bar {
-      height: 5px;
-      background: #ececf5;
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .mini-progress-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg,#7159ed,#36a8ff);
-      border-radius: inherit;
-    }
-
-    /* LOWER GRID */
+    /* =====================================================
+       LOWER AREA
+       ===================================================== */
 
     .lower-grid {
       display: grid;
-      grid-template-columns: 1.3fr .7fr;
-      gap: 14px;
+
+      grid-template-columns:
+        1.25fr .75fr;
+
+      gap: 13px;
     }
 
     .panel {
-      padding: 20px;
-      border-radius: 20px;
+      min-height: 170px;
+
+      padding: 19px;
+
+      border: 1px solid var(--sv-border);
+      border-radius: 19px;
+
       background: rgba(255,255,255,.80);
-      border: 1px solid rgba(100,100,150,.10);
-      box-shadow: 0 12px 35px rgba(50,60,120,.05);
     }
 
-    .empty {
-      padding: 30px 10px;
+    .panel-title {
+      margin: 0;
+
+      font-size: 15px;
+    }
+
+    .panel-subtitle {
+      margin: 4px 0 0;
+
+      color: #979aaa;
+
+      font-size: 9px;
+    }
+
+    .empty-state {
+      padding: 32px 10px;
+
       text-align: center;
-      color: #999cad;
-      font-size: 12px;
+
+      color: #9a9dad;
+
+      font-size: 10px;
     }
 
-    .empty-icon {
-      font-size: 26px;
+    .empty-state-icon {
       margin-bottom: 8px;
+
+      font-size: 24px;
     }
 
-    /* MOBILE */
-
-    .mobile-header {
-      display: none;
-    }
+    /* =====================================================
+       MOBILE
+       ===================================================== */
 
     @media (max-width: 1100px) {
-      .chapter-grid {
-        grid-template-columns: repeat(2,1fr);
-      }
 
-      .stats {
-        grid-template-columns: repeat(2,1fr);
+      .tool-grid {
+        grid-template-columns:
+          repeat(3, minmax(0,1fr));
       }
 
       .lower-grid {
@@ -707,40 +839,51 @@
       }
     }
 
-    @media (max-width: 760px) {
+    @media (max-width: 800px) {
+
       .sidebar {
         display: none;
       }
 
       .main {
-        margin-left: 0;
         width: 100%;
-        padding: 18px 15px 40px;
+        margin-left: 0;
+
+        padding:
+          15px
+          15px
+          85px;
       }
 
-      .mobile-header {
+      .mobile-topbar {
         display: flex;
+
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 20px;
+
+        margin-bottom: 18px;
       }
 
       .mobile-brand {
         display: flex;
         align-items: center;
         gap: 9px;
+
+        font-size: 15px;
         font-weight: 850;
       }
 
       .mobile-brand .brand-nine {
         width: 36px;
         height: 36px;
+
         font-size: 19px;
+
         border-radius: 11px;
       }
 
       .topbar {
-        margin-bottom: 18px;
+        margin-bottom: 17px;
       }
 
       .top-actions {
@@ -748,141 +891,184 @@
       }
 
       .hero {
-        padding: 25px 21px;
-        min-height: 310px;
-        border-radius: 23px;
+        min-height: 285px;
+
+        padding: 24px 20px;
+
+        border-radius: 22px;
       }
 
-      .hero::after {
+      .hero-symbols {
         right: 15px;
-        bottom: 20px;
-        font-size: 15px;
+        bottom: 25px;
+
+        font-size: 17px;
+        letter-spacing: 8px;
       }
 
-      .stats {
+      .tool-grid {
+        grid-template-columns:
+          repeat(2, minmax(0,1fr));
+
         gap: 10px;
       }
 
-      .stat {
-        padding: 15px;
+      .tool-card {
+        min-height: 137px;
+
+        padding: 14px;
       }
 
-      .continue-card {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .progress-wrap {
-        width: 100%;
-      }
-
-      .continue-btn {
-        width: 100%;
-      }
-
-      .chapter-grid {
+      .library-grid {
         grid-template-columns: 1fr;
       }
     }
 
+    @media (max-width: 430px) {
+
+      .title {
+        font-size: 27px;
+      }
+
+      .hero h2 {
+        font-size: 28px;
+      }
+
+      .tool-name {
+        font-size: 12px;
+      }
+
+      .tool-description {
+        font-size: 8px;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
+
       *,
       *::before,
       *::after {
-        animation-duration: .01ms !important;
         transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
       }
     }
+
   </style>
 </head>
+
 
 <body>
 
   <canvas id="three-bg"></canvas>
-  <div class="page-glow"></div>
+
 
   <div class="app">
 
-    <!-- SIDEBAR -->
+    <!-- =================================================
+         DESKTOP SIDEBAR
+         ================================================= -->
+
     <aside class="sidebar">
 
       <a href="dashboard.html" class="brand">
-        <div class="brand-nine">9</div>
 
-        <div class="brand-text">
+        <div class="brand-nine">
+          9
+        </div>
+
+        <div class="brand-name">
           <strong>StudyVerse</strong>
           <span>CLASS 9</span>
         </div>
+
       </a>
 
-      <div class="nav-title">Workspace</div>
 
-      <nav class="nav">
+      <div class="nav-heading">
+        Learn
+      </div>
 
-        <a href="dashboard.html" class="active">
+
+      <nav class="navigation">
+
+        <a
+          href="dashboard.html"
+          class="active"
+        >
           <span class="nav-icon">⌂</span>
           Dashboard
         </a>
 
-        <a href="chapters.html">
-          <span class="nav-icon">∑</span>
-          Mathematics
+        <a href="#tools">
+          <span class="nav-icon">✦</span>
+          Learning Hub
+        </a>
+
+        <a href="#books">
+          <span class="nav-icon">📚</span>
+          Books
         </a>
 
         <a href="chapters.html">
-          <span class="nav-icon">▦</span>
+          <span class="nav-icon">∑</span>
           Chapters
         </a>
 
-        <a href="chapters.html">
-          <span class="nav-icon">▶</span>
-          Videos
+        <a href="#practice">
+          <span class="nav-icon">🧠</span>
+          Practice
         </a>
 
-        <a href="chapters.html">
-          <span class="nav-icon">▤</span>
-          Resources
+        <a href="#progress">
+          <span class="nav-icon">◔</span>
+          My Progress
         </a>
 
-        <a href="chapters.html">
+      </nav>
+
+
+      <div class="nav-heading" style="margin-top:16px;">
+        Library
+      </div>
+
+
+      <nav class="navigation">
+
+        <a href="#pdf-library">
+          <span class="nav-icon">📄</span>
+          PDF Library
+        </a>
+
+        <a href="#bookmarks">
           <span class="nav-icon">🔖</span>
           Bookmarks
         </a>
 
       </nav>
 
-      <div class="nav-title" style="margin-top:18px;">
-        More
-      </div>
 
-      <nav class="nav">
+      <div class="sidebar-spacer"></div>
 
-        <a href="index.html">
-          <span class="nav-icon">◎</span>
-          Public Website
-        </a>
 
-        <button onclick="handleLogout()">
-          <span class="nav-icon">↪</span>
-          Sign Out
-        </button>
+      <div class="student-mini">
 
-      </nav>
+        <div class="student-row">
 
-      <div class="sidebar-bottom">
+          <div
+            class="avatar"
+            data-user-initial
+          >
+            S
+          </div>
 
-        <div class="profile-mini">
+          <div class="student-info">
 
-          <div class="profile-mini-row">
+            <strong data-user-name>
+              Student
+            </strong>
 
-            <div class="avatar" data-user-initial>
-              S
-            </div>
-
-            <div class="profile-name">
-              <strong data-user-name>Student</strong>
-              <span data-user-email></span>
-            </div>
+            <span data-user-email>
+            </span>
 
           </div>
 
@@ -893,129 +1079,98 @@
     </aside>
 
 
-    <!-- MAIN -->
+    <!-- =================================================
+         MAIN
+         ================================================= -->
+
     <main class="main">
 
-      <div class="mobile-header">
 
-        <a href="dashboard.html" class="mobile-brand">
-          <div class="brand-nine">9</div>
-          <span>StudyVerse</span>
+      <!-- MOBILE HEADER -->
+
+      <div class="mobile-topbar">
+
+        <a
+          href="dashboard.html"
+          class="mobile-brand"
+        >
+
+          <div class="brand-nine">
+            9
+          </div>
+
+          StudyVerse
+
         </a>
 
-        <button class="icon-btn" onclick="handleLogout()">
+
+        <button
+          class="top-btn"
+          onclick="handleLogout()"
+        >
           ↪
         </button>
 
       </div>
 
 
-      <!-- TOP BAR -->
-      <div class="topbar">
+      <!-- TOPBAR -->
+
+      <header class="topbar">
 
         <div>
-          <div class="welcome">
+
+          <div class="greeting">
             Welcome back,
-            <span data-user-name>Student</span> 👋
+            <span data-user-name>
+              Student
+            </span>
+            👋
           </div>
 
-          <h1 class="page-title">
+          <h1 class="title">
             Your <span>Learning Space</span>
           </h1>
+
         </div>
+
 
         <div class="top-actions">
 
           <button
-            class="icon-btn"
+            class="top-btn"
             title="Search"
-            onclick="location.href='chapters.html'"
+            onclick="openSearch()"
           >
             ⌕
           </button>
 
           <button
-            class="icon-btn"
-            title="Resources"
-            onclick="location.href='chapters.html'"
+            class="top-btn"
+            title="Bookmarks"
+            onclick="location.hash='bookmarks'"
           >
-            ▤
+            🔖
           </button>
 
         </div>
 
-      </div>
+      </header>
 
 
-      <!-- HERO -->
+      <!-- =================================================
+           HERO
+           ================================================= -->
+
       <section class="hero">
 
         <div class="hero-content">
 
-          <div class="hero-badge">
-            ✦ Mathematics · Part 1
+          <div class="hero-label">
+            ✦ StudyVerse 9 · Mathematics
           </div>
+
 
           <h2>
-            Learn mathematics.<br>
-            Think beyond the page.
-          </h2>
-
-          <p>
-            Explore your Class 9 Mathematics curriculum through
-            chapters, original explanations, exercises, questions,
-            resources and interactive learning.
-          </p>
-
-          <div class="hero-actions">
-
-            <button
-              class="hero-btn primary"
-              onclick="location.href='chapters.html'"
-            >
-              Continue Learning →
-            </button>
-
-            <button
-              class="hero-btn secondary"
-              onclick="location.href='chapters.html'"
-            >
-              Explore Chapters
-            </button>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- STATS -->
-      <section class="stats">
-
-        <div class="stat">
-
-          <div class="stat-top">
-            <span class="stat-label">Chapters</span>
-            <span class="stat-icon">∑</span>
-          </div>
-
-          <div class="stat-value" id="chapterCount">
-            8
-          </div>
-
-          <div class="stat-sub">
-            Mathematics Part 1
-          </div>
-
-        </div>
-
-
-        <div class="stat">
-
-          <div class="stat-top">
-            <span class="stat-label">Completed</span>
-            <span class="stat-icon">✓</span>
-          </div>
-
-          
+            Learn your way.<br>
+            Expl
