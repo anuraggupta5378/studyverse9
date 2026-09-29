@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>StudyVerse 9</title>
+
+  <link rel="stylesheet" href="brand.css">
+
+  <style>
+
+    .landing {
+      min-height: 100vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 30px;
+    }
+
+    .hero {
+      width: min(900px, 100%);
+      text-align: center;
+    }
+
+    .hero-nine {
+      width: 120px;
+      height: 120px;
+
+      margin: 0 auto 28px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 38px;
+
+      color: white;
+
+      font-size: 76px;
+      font-weight: 900;
+
+      background:
+        linear-gradient(
+          135deg,
+          #635bff,
+          #8b5cf6
+        );
+
+      box-shadow:
+        0 30px 80px
+        rgba(99,91,255,.30);
+
+      animation:
+        heroFloat 4s ease-in-out infinite;
+    }
+
+    .hero h1 {
+      margin: 0;
+
+      font-size:
+        clamp(48px, 8vw, 86px);
+
+      line-height: .95;
+
+      letter-spacing: -.07em;
+    }
+
+    .hero h1 span {
+      background:
+        linear-gradient(
+          135deg,
+          #635bff,
+          #8b5cf6
+        );
+
+      -webkit-background-clip: text;
+      background-clip: text;
+
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 620px;
+      margin: 25px auto 35px;
+
+      color: var(--sv-muted);
+
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+
+      max-width: 420px;
+      margin: auto;
+    }
+
+    .hero-actions a {
+      text-decoration: none;
+    }
+
+    .hero-actions .primary-btn,
+    .hero-actions .secondary-btn {
+      width: auto;
+      min-width: 150px;
+    }
+
+    .mini-note {
+      margin-top: 28px;
+      font-size: 13px;
+      color: var(--sv-muted);
+    }
+
+    @keyframes heroFloat {
+
+      0%,100% {
+        transform:
+          translateY(0)
+          rotate(0deg);
+      }
+
+      50% {
+        transform:
+          translateY(-12px)
+          rotate(2deg);
+      }
+
+    }
+
+    @media(max-width:600px) {
+
+      .landing {
+        padding: 20px;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .hero-actions .primary-btn,
+      .hero-actions .secondary-btn {
+        width: 100%;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="three-layer">
+    <canvas id="three-bg"></canvas>
+  </div>
+
+  <main class="app-layer landing">
+
+    <section class="hero">
+
+      <div class="hero-nine">
+        9
+      </div>
+
+      <h1>
+        Study<span>Verse</span> 9
+      </h1>
+
+      <p>
+        A modern learning space for Class 9 —
+        built around understanding, practice,
+        progress and interactive learning.
+      </p>
+
+      <div class="hero-actions">
+
+        <a
+          href="login.html"
+          class="primary-btn"
+        >
+          Student Login
+        </a>
+
+        <a
+          href="register.html"
+          class="secondary-btn"
+        >
+          Create Account
+        </a>
+
+      </div>
+
+      <div class="mini-note">
+        Mathematics first • More subjects coming soon
+      </div>
+
+    </section>
+
+  </main>
+
+  <script
+    type="module"
+    src="three-bg.js"
+  ></script>
+
+</body>
+
+  </html>
