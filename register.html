@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Create Account — StudyVerse 9</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- StudyVerse configuration -->
+  <script src="config.js"></script>
+
+  <!-- Shared application code -->
+  <script src="app.js"></script>
+
+  <!-- New StudyVerse design -->
+  <link rel="stylesheet" href="brand.css">
+</head>
+
+<body class="auth-page">
+
+  <!-- 3D background -->
+  <canvas id="three-bg"></canvas>
+
+  <main class="auth-shell">
+
+    <!-- Brand -->
+    <a href="index.html" class="auth-brand">
+      <div class="brand-nine">9</div>
+
+      <div>
+        <strong>StudyVerse</strong>
+        <span>CLASS 9</span>
+      </div>
+    </a>
+
+
+    <!-- Registration card -->
+    <section class="auth-card">
+
+      <div class="auth-heading">
+
+        <span class="eyebrow">
+          START YOUR JOURNEY
+        </span>
+
+        <h1>
+          Create your<br>
+          StudyVerse account.
+        </h1>
+
+        <p>
+          Join StudyVerse 9 and keep your chapters,
+          resources and learning progress in one place.
+        </p>
+
+      </div>
+
+
+      <form id="registerForm">
+
+        <!-- Name -->
+        <div class="field">
+
+          <label for="name">
+            Full name
+          </label>
+
+          <input
+            id="name"
+            type="text"
+            placeholder="Enter your full name"
+            autocomplete="name"
+            required
+          >
+
+        </div>
+
+
+        <!-- Email -->
+        <div class="field">
+
+          <label for="email">
+            Email address
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          >
+
+        </div>
+
+
+        <!-- Password -->
+        <div class="field">
+
+          <div class="field-top">
+
+            <label for="password">
+              Password
+            </label>
+
+            <button
+              type="button"
+              id="togglePassword"
+              class="password-toggle"
+            >
+              Show
+            </button>
+
+          </div>
+
+          <input
+            id="password"
+            type="password"
+            placeholder="Create a password"
+            autocomplete="new-password"
+            minlength="6"
+            required
+          >
+
+        </div>
+
+
+        <!-- Confirm password -->
+        <div class="field">
+
+          <div class="field-top">
+
+            <label for="confirmPassword">
+              Confirm password
+            </label>
+
+            <button
+              type="button"
+              id="toggleConfirmPassword"
+              class="password-toggle"
+            >
+              Show
+            </button>
+
+          </div>
+
+          <input
+            id="confirmPassword"
+            type="password"
+            placeholder="Enter password again"
+            autocomplete="new-password"
+            minlength="6"
+            required
+          >
+
+        </div>
+
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          id="registerButton"
+          class="primary-btn"
+        >
+          <span id="registerButtonText">
+            Create account
+          </span>
+        </button>
+
+
+        <!-- Message -->
+        <p
+          id="registerMessage"
+          class="auth-message"
+        ></p>
+
+      </form>
+
+
+      <!-- Login -->
+      <div class="auth-divider">
+        <span>ALREADY HAVE AN ACCOUNT?</span>
+      </div>
+
+
+      <a
+        href="login.html"
+        class="secondary-btn"
+      >
+        Sign in instead
+      </a>
+
+
+      <a
+        href="index.html"
+        class="back-link"
+      >
+        ← Back to StudyVerse 9
+      </a>
+
+    </section>
+
+  </main>
+
+
+  <!-- 3D background -->
+  <script src="three-bg.js"></script>
+
+
+  <script>
+
+    /* =====================================
+       ELEMENTS
+       ===================================== */
+
+    const form =
+      document.getElementById("registerForm");
+
+    const nameInput =
+      document.getElementById("name");
+
+    const emailInput =
+      document.getElementById("email");
+
+    const passwordInput =
+      document.getElementById("password");
+
+    const confirmPasswordInput =
+      document.getElementById("confirmPassword");
+
+    const registerButton =
+      document.getElementById("registerButton");
+
+    const registerButtonText =
+      document.getElementById("registerButtonText");
+
+    const registerMessage =
+      document.getElementById("registerMessage");
+
+    const togglePassword =
+      document.getElementById("togglePassword");
+
+    const toggleConfirmPassword =
+      document.getElementById("toggleConfirmPassword");
+
+
+    /* =====================================
+       CHECK EXISTING SESSION
+       ===================================== */
+
+    async function checkSession() {
+
+      try {
+
+        const {
+          data: { session }
+        } = await sb.auth.getSession();
+
+        if (session) {
+
+          window.location.href =
+            "dashboard.html";
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Session check error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    /* =====================================
+       PASSWORD VISIBILITY
+       ===================================== */
+
+    togglePassword.addEventListener(
+      "click",
+      () => {
+
+        const hidden =
+          passwordInput.type === "password";
+
+        passwordInput.type =
+          hidden ? "text" : "password";
+
+        togglePassword.textContent =
+          hidden ? "Hide" : "Show";
+
+      }
+    );
+
+
+    toggleConfirmPassword.addEventListener(
+      "click",
+      () => {
+
+        const hidden =
+          confirmPasswordInput.type === "password";
+
+        confirmPasswordInput.type =
+          hidden ? "text" : "password";
+
+        toggleConfirmPassword.textContent =
+          hidden ? "Hide" : "Show";
+
+      }
+    );
+
+
+    /* =====================================
+       MESSAGE
+       ===================================== */
+
+   
