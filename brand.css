@@ -1,28 +1,48 @@
+/* =========================================================
+   STUDYVERSE 9
+   PREMIUM APP BRAND SYSTEM
+   Login + Register
+   ========================================================= */
+
 :root {
-  --sv-primary: #635bff;
-  --sv-secondary: #8b5cf6;
-  --sv-accent: #38bdf8;
+  --sv-bg: #f5f7ff;
+  --sv-bg-2: #eef1ff;
 
-  --sv-bg: #f7f8ff;
-  --sv-surface: rgba(255,255,255,.78);
-  --sv-text: #171827;
-  --sv-muted: #6b6f85;
+  --sv-text: #17172a;
+  --sv-muted: #72748a;
+  --sv-soft: #9698aa;
 
-  --sv-border: rgba(30,35,70,.10);
+  --sv-purple: #6c5ce7;
+  --sv-purple-2: #8d63ff;
+  --sv-blue: #4c8dff;
+  --sv-cyan: #54d7ff;
 
-  --sv-radius: 24px;
+  --sv-white: rgba(255, 255, 255, 0.88);
+  --sv-border: rgba(255, 255, 255, 0.72);
+
   --sv-shadow:
-    0 20px 60px rgba(30,35,90,.12);
+    0 30px 80px rgba(54, 47, 120, 0.16),
+    0 8px 30px rgba(54, 47, 120, 0.08);
 }
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
 
 * {
   box-sizing: border-box;
 }
 
-html,
+html {
+  width: 100%;
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  min-height: 100%;
+  min-height: 100vh;
+
   font-family:
     Inter,
     ui-sans-serif,
@@ -31,163 +51,779 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: var(--sv-text);
-}
 
-body {
+  color: var(--sv-text);
+
   background:
     radial-gradient(
-      circle at 20% 10%,
-      rgba(99,91,255,.12),
-      transparent 30%
+      circle at 15% 15%,
+      rgba(108, 92, 231, 0.15),
+      transparent 32%
     ),
     radial-gradient(
-      circle at 90% 80%,
-      rgba(56,189,248,.12),
+      circle at 85% 80%,
+      rgba(84, 215, 255, 0.13),
       transparent 30%
     ),
-    var(--sv-bg);
+    linear-gradient(
+      135deg,
+      var(--sv-bg),
+      var(--sv-bg-2)
+    );
+
+  overflow-x: hidden;
 }
 
-.three-layer {
+
+/* =========================================================
+   3D CANVAS
+   ========================================================= */
+
+#three-bg {
   position: fixed;
+
   inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
 
-.three-layer canvas {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+
   display: block;
+
+  z-index: 0;
+
+  pointer-events: none;
+
+  opacity: 0.72;
 }
 
-.app-layer {
+
+/* =========================================================
+   AUTH PAGE
+   ========================================================= */
+
+.auth-page {
   position: relative;
-  z-index: 2;
-}
 
-.brand {
+  min-height: 100vh;
+
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-weight: 800;
-  letter-spacing: -.03em;
+  justify-content: center;
+
+  padding: 42px 20px;
+
+  isolation: isolate;
 }
 
+
+/* Soft foreground atmosphere */
+
+.auth-page::before {
+  content: "";
+
+  position: fixed;
+
+  width: 520px;
+  height: 520px;
+
+  left: -230px;
+  top: 18%;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(108, 92, 231, 0.12),
+      transparent 68%
+    );
+
+  pointer-events: none;
+
+  z-index: -1;
+}
+
+.auth-page::after {
+  content: "";
+
+  position: fixed;
+
+  width: 500px;
+  height: 500px;
+
+  right: -220px;
+  bottom: -160px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(84, 215, 255, 0.14),
+      transparent 68%
+    );
+
+  pointer-events: none;
+
+  z-index: -1;
+}
+
+
+/* =========================================================
+   MAIN AUTH CONTAINER
+   ========================================================= */
+
+.auth-shell {
+  position: relative;
+
+  width: min(100%, 500px);
+
+  z-index: 2;
+
+  animation:
+    authAppear 0.75s cubic-bezier(.2,.8,.2,1)
+    both;
+}
+
+@keyframes authAppear {
+  from {
+    opacity: 0;
+    transform:
+      translateY(24px)
+      scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 13px;
+
+  margin-bottom: 22px;
+
+  color: var(--sv-text);
+
+  text-decoration: none;
+}
+
+.auth-brand strong {
+  display: block;
+
+  font-size: 22px;
+  font-weight: 850;
+
+  letter-spacing: -0.8px;
+
+  line-height: 1;
+}
+
+.auth-brand span {
+  display: block;
+
+  margin-top: 5px;
+
+  font-size: 9px;
+  font-weight: 850;
+
+  letter-spacing: 2.2px;
+
+  color: var(--sv-muted);
+}
+
+
+/* =========================================================
+   THE 9 BRAND MARK
+   ========================================================= */
+
 .brand-nine {
-  width: 44px;
-  height: 44px;
+  position: relative;
+
+  width: 48px;
+  height: 48px;
 
   display: grid;
   place-items: center;
 
-  border-radius: 14px;
+  border-radius: 16px;
 
   color: white;
-  font-size: 25px;
-  font-weight: 900;
+
+  font-size: 27px;
+  font-weight: 950;
+
+  line-height: 1;
 
   background:
     linear-gradient(
-      135deg,
-      #635bff,
-      #8b5cf6
+      145deg,
+      var(--sv-purple-2),
+      var(--sv-purple),
+      var(--sv-blue)
     );
 
   box-shadow:
-    0 12px 30px
-    rgba(99,91,255,.28);
+    0 14px 34px rgba(108, 92, 231, 0.30);
+
+  overflow: hidden;
 }
 
-.brand-name {
-  font-size: 20px;
-}
+.brand-nine::before {
+  content: "";
 
-.glass-card {
+  position: absolute;
+
+  width: 70px;
+  height: 70px;
+
+  top: -40px;
+  right: -30px;
+
+  border-radius: 50%;
+
   background:
-    var(--sv-surface);
+    rgba(255,255,255,0.24);
+
+  filter: blur(4px);
+}
+
+.brand-nine::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 1px;
+
+  border-radius: 15px;
+
+  border:
+    1px solid rgba(255,255,255,0.30);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   AUTH CARD
+   ========================================================= */
+
+.auth-card {
+  position: relative;
+
+  padding: 42px;
+
+  border-radius: 32px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,0.91),
+      rgba(255,255,255,0.72)
+    );
 
   border:
     1px solid var(--sv-border);
 
-  border-radius:
-    var(--sv-radius);
+  box-shadow: var(--sv-shadow);
 
-  box-shadow:
-    var(--sv-shadow);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
 
-  backdrop-filter:
-    blur(20px);
-
-  -webkit-backdrop-filter:
-    blur(20px);
+  overflow: hidden;
 }
 
-button,
-input {
-  font: inherit;
-}
 
-.primary-btn {
-  width: 100%;
-  border: 0;
-  border-radius: 15px;
+/* Card light reflection */
 
-  padding: 14px 18px;
+.auth-card::before {
+  content: "";
 
-  color: white;
+  position: absolute;
+
+  width: 230px;
+  height: 230px;
+
+  top: -150px;
+  right: -100px;
+
+  border-radius: 50%;
+
   background:
-    linear-gradient(
-      135deg,
-      #635bff,
-      #8b5cf6
+    radial-gradient(
+      circle,
+      rgba(255,255,255,0.95),
+      transparent 70%
     );
 
-  font-weight: 700;
-  cursor: pointer;
+  pointer-events: none;
+}
+
+
+/* Card top accent */
+
+.auth-card::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 12%;
+
+  width: 76%;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      var(--sv-purple-2),
+      var(--sv-blue),
+      transparent
+    );
+
+  opacity: 0.8;
+}
+
+
+/* =========================================================
+   HEADING
+   ========================================================= */
+
+.auth-heading {
+  position: relative;
+
+  margin-bottom: 30px;
+
+  z-index: 1;
+}
+
+.eyebrow {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-bottom: 12px;
+
+  font-size: 10px;
+  font-weight: 900;
+
+  letter-spacing: 2px;
+
+  color: var(--sv-purple);
+}
+
+.eyebrow::before {
+  content: "";
+
+  width: 20px;
+  height: 2px;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--sv-purple),
+      var(--sv-blue)
+    );
+}
+
+.auth-heading h1 {
+  margin: 0;
+
+  font-size:
+    clamp(34px, 7vw, 47px);
+
+  line-height: 1.03;
+
+  letter-spacing: -2.2px;
+
+  font-weight: 850;
+}
+
+.auth-heading p {
+  max-width: 410px;
+
+  margin: 16px 0 0;
+
+  color: var(--sv-muted);
+
+  font-size: 14px;
+
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.field {
+  margin-bottom: 19px;
+}
+
+.field-top {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  color: #414256;
+}
+
+.field input {
+  width: 100%;
+  height: 54px;
+
+  padding:
+    0 16px;
+
+  border:
+    1px solid rgba(46, 45, 80, 0.10);
+
+  border-radius: 15px;
+
+  outline: none;
+
+  background:
+    rgba(255,255,255,0.76);
+
+  color: var(--sv-text);
+
+  font-family: inherit;
+
+  font-size: 14px;
 
   box-shadow:
-    0 12px 25px
-    rgba(99,91,255,.25);
+    inset 0 1px 1px rgba(255,255,255,0.7);
 
   transition:
-    transform .2s ease,
-    box-shadow .2s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.field input::placeholder {
+  color: #a6a8b7;
+}
+
+.field input:hover {
+  background:
+    rgba(255,255,255,0.92);
+}
+
+.field input:focus {
+  border-color:
+    rgba(108, 92, 231, 0.50);
+
+  background:
+    rgba(255,255,255,0.96);
+
+  box-shadow:
+    0 0 0 4px rgba(108,92,231,0.09),
+    0 8px 20px rgba(70,65,140,0.06);
+
+  transform:
+    translateY(-1px);
+}
+
+
+/* =========================================================
+   PASSWORD BUTTON
+   ========================================================= */
+
+.password-toggle {
+  border: 0;
+
+  padding: 3px 0;
+
+  background: transparent;
+
+  color: var(--sv-purple);
+
+  font-family: inherit;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: var(--sv-blue);
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+   ========================================================= */
+
+.primary-btn {
+  position: relative;
+
+  width: 100%;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 5px;
+
+  border: 0;
+
+  border-radius: 15px;
+
+  color: white;
+
+  background:
+    linear-gradient(
+      110deg,
+      #6955e9,
+      #7659f4,
+      #4f91ff
+    );
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 850;
+
+  letter-spacing: 0.1px;
+
+  cursor: pointer;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 14px 30px rgba(95, 77, 224, 0.27);
+
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.primary-btn::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: -80%;
+
+  width: 55%;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,0.28),
+      transparent
+    );
+
+  transform: skewX(-20deg);
+
+  transition:
+    left 0.55s ease;
+}
+
+.primary-btn:hover::before {
+  left: 125%;
 }
 
 .primary-btn:hover {
-  transform: translateY(-2px);
+  transform:
+    translateY(-2px);
 
   box-shadow:
-    0 16px 32px
-    rgba(99,91,255,.30);
+    0 18px 38px rgba(95, 77, 224, 0.34);
 }
+
+.primary-btn:active {
+  transform:
+    translateY(0);
+}
+
+.primary-btn:disabled {
+  opacity: 0.65;
+
+  cursor: wait;
+
+  transform: none;
+
+  box-shadow:
+    0 8px 20px rgba(95, 77, 224, 0.16);
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+.auth-message {
+  min-height: 19px;
+
+  margin:
+    12px 0 0;
+
+  text-align: center;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.auth-message[data-type="error"] {
+  color: #d04c5b;
+}
+
+.auth-message[data-type="success"] {
+  color: #19875a;
+}
+
+
+/* =========================================================
+   DIVIDER
+   ========================================================= */
+
+.auth-divider {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin:
+    26px 0 15px;
+
+  color: #a0a2b1;
+
+  font-size: 8px;
+
+  font-weight: 900;
+
+  letter-spacing: 1.7px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background:
+    rgba(42, 40, 75, 0.09);
+}
+
+
+/* =========================================================
+   SECONDARY BUTTON
+   ========================================================= */
 
 .secondary-btn {
   width: 100%;
-  border: 1px solid var(--sv-border);
+  height: 52px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1px solid rgba(108, 92, 231, 0.15);
+
   border-radius: 15px;
 
-  padding: 14px 18px;
+  background:
+    rgba(255,255,255,0.58);
 
-  background: rgba(255,255,255,.7);
-  color: var(--sv-text);
+  color:
+    var(--sv-purple);
 
-  font-weight: 700;
-  cursor: pointer;
+  font-size: 13px;
+
+  font-weight: 800;
+
+  text-decoration: none;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
-@media (max-width: 700px) {
+.secondary-btn:hover {
+  transform:
+    translateY(-2px);
 
-  .brand-name {
-    font-size: 18px;
-  }
+  background:
+    rgba(255,255,255,0.90);
 
-  .brand-nine {
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-  }
+  border-color:
+    rgba(108,92,231,0.27);
+}
 
-      }
+
+/* =========================================================
+   BACK LINK
+   ========================================================= */
+
+.back-link {
+  display: block;
+
+  margin-top: 20px;
+
+  text-align: center;
+
+  color: var(--sv-muted);
+
+  font-size: 12px;
+
+  font-weight: 650;
+
+  text-decoration: none;
+
+  transition:
+    color 0.2s ease;
+}
+
+.back-link:hover {
+  color:
+    var(--sv-purple);
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@
