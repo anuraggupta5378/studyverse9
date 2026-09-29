@@ -8,7 +8,6 @@
 </head>
 
 <body>
-
 <main class="shell">
 
   <section class="hero">
@@ -30,8 +29,7 @@
 
     <!-- LOGIN -->
     <div class="card">
-
-      <h2>Welcome back</h2>
+      <h2>Sign in</h2>
 
       <form id="login" class="form">
 
@@ -62,16 +60,14 @@
       </form>
 
       <p class="muted">
-        Sign in to continue your learning journey.
+        Sign in using the email and password you registered with.
       </p>
-
     </div>
 
 
     <!-- REGISTER -->
     <div class="card">
-
-      <h2>Create your account</h2>
+      <h2>Create student account</h2>
 
       <form id="register" class="form">
 
@@ -124,22 +120,26 @@
       </form>
 
       <p class="tag">
-        Your account will start with the student role.
+        Your account starts with the student role.
       </p>
-
     </div>
 
   </section>
 
 </main>
 
-
 <div id="toast" class="toast"></div>
 
 
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- StudyVerse configuration -->
 <script src="config.js"></script>
+
+<!-- Shared StudyVerse client -->
 <script src="app.js"></script>
+
 
 <script>
 
@@ -147,94 +147,187 @@ const loginForm = document.getElementById("login");
 const registerForm = document.getElementById("register");
 
 
-// LOGIN
-loginForm.addEventListener("submit", async (e) => {
+/* =========================
+   LOGIN
+========================= */
 
-  e.preventDefault();
+loginForm.addEventListener("submit", async (event) => {
+
+  event.preventDefault();
+
+  const email =
+    document.getElementById("email").value.trim();
+
+  const password =
+    document.getElementById("password").value;
+
 
   try {
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+    const { data, error } =
+      await sb.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
 
-    const { error } = await sb.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) throw error;
-
-    location.href = "dashboard.html";
-
-  } catch (err) {
-
-    toast(err.message || "Unable to sign in.", "error");
-
-  }
-
-});
-
-
-// REGISTER
-registerForm.addEventListener("submit", async (e) => {
-
-  e.preventDefault();
-
-  try {
-
-    const name = document.getElementById("rname").value.trim();
-    const email = document.getElementById("remail").value.trim();
-    const password = document.getElementById("rpassword").value;
-    const password2 = document.getElementById("rpassword2").value;
-
-    if (password !== password2) {
-      throw new Error("Passwords do not match.");
+    if (error) {
+      throw error;
     }
 
-    if (password.length < 6) {
-      throw new Error("Password must contain at least 6 characters.");
-    }
-
-    const { data, error } = await sb.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name
-        }
-      }
-    });
-
-    if (error) throw error;
-
-    if (!data.session) {
+    if (!data || !data.session) {
       throw new Error(
-        "Account created, but automatic sign-in is disabled. Please check Supabase Email Confirmation settings."
+        "Login succeeded but no session was created."
       );
     }
 
-    toast("🎉 Welcome to StudyVerse 9! Your learning journey begins now.", "success");
+    location.href = "dashboard.html";
 
-    setTimeout(() => {
-      location.href = "dashboard.html";
-    }, 1200);
+  } catch (error) {
 
-  } catch (err) {
+    console.error("LOGIN ERROR:", error);
 
-    toast(err.message || "Unable to create account.", "error");
+    toast(
+      error.message || "Unable to sign in.",
+      "error"
+    );
 
   }
 
 });
 
 
-// If already signed in, go to dashboard
+/* =========================
+   REGISTRATION
+========================= */
+
+registerForm.addEventListener("submit", async (event) => {
+
+  event.preventDefault();
+
+  const name =
+    document.getElementById("rname").value.trim();
+
+  const email =
+    document.getElementById("remail").value.trim();
+
+  const password =
+    document.getElementById("rpassword").value;
+
+  const password2 =
+    document.getElementById("rpassword2").value;
+
+
+  try {
+
+    if (!name) {
+      throw new Error("Please enter your full name.");
+    }
+
+    if (password.length < 6) {
+      throw new Error(
+        "Password must contain at least 6 characters."
+      );
+    }
+
+    if (password !== password2) {
+      throw new Error(
+        "Passwords do not match."
+      );
+    }
+
+
+    /* IMPORTANT:
+       This is PASSWORD signup.
+       No OTP.
+       No magic link.
+    */
+
+    const { data, error } =
+      await sb.auth.signUp({
+
+        email: email,
+
+        password: password,
+
+        options: {
+          data: {
+            full_name: name
+          }
+        }
+
+      });
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    console.log("SIGNUP RESULT:", data);
+
+
+    /*
+      With Confirm Email OFF,
+      Supabase should return a session.
+    */
+
+    if (!data.session) {
+
+      throw new Error(
+        "Account was created, but Supabase did not create a login session. Please check that Confirm Email is OFF in Supabase."
+      );
+
+    }
+
+
+    toast(
+      "Account created successfully! Welcome to StudyVerse 9.",
+      "success"
+    );
+
+
+    setTimeout(() => {
+
+      location.href = "dashboard.html";
+
+    }, 1000);
+
+
+  } catch (error) {
+
+    console.error("REGISTRATION ERROR:", error);
+
+    toast(
+      error.message || "Unable to create account.",
+      "error"
+    );
+
+  }
+
+});
+
+
+/* =========================
+   AUTO REDIRECT
+========================= */
+
 (async () => {
 
-  const u = await currentUser();
+  try {
 
-  if (u) {
-    location.href = "dashboard.html";
+    const user = await currentUser();
+
+    if (user) {
+      location.href = "dashboard.html";
+    }
+
+  } catch (error) {
+
+    console.error(
+      "SESSION CHECK ERROR:",
+      error
+    );
+
   }
 
 })();
@@ -242,4 +335,4 @@ registerForm.addEventListener("submit", async (e) => {
 </script>
 
 </body>
-  </html>
+</html>
