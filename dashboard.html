@@ -1,1 +1,1021 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudyVerse 9 — Dashboard</title><link rel="stylesheet" href="styles.css"></head><body><main class="shell"><header class="topbar"><a class="brand" href="dashboard.html"><span class="logo">S9</span> StudyVerse 9</a><nav class="nav"><a href="dashboard.html">Dashboard</a><a href="chapters.html">Learn</a><a id="adminLink" href="admin.html" style="display:none">Admin</a><a id="staffLink" href="staff.html" style="display:none">Staff</a><button onclick="signOut()">Sign out</button></nav></header><section class="hero"><span class="pill">Student dashboard</span><h1>Welcome, <span data-user-name>Student</span>.</h1><p>Pick up where you left off or explore the eight Ganita Manjari Part 1 chapters.</p></section><section class="grid" id="stats"></section><section class="card" style="margin-top:18px"><div class="actions" style="justify-content:space-between"><h2>Mathematics — Ganita Manjari Part 1</h2><a class="btn small" href="chapters.html">Open all chapters</a></div><div id="chapters" class="grid"></div></section><section class="card" style="margin-top:18px"><h2>Announcements</h2><div id="announcements"></div></section></main><div id="toast" class="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script><script src="student.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Dashboard — StudyVerse 9</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+  <link rel="stylesheet" href="brand.css" />
+
+  <style>
+    /* ================================
+       STUDYVERSE 9 — DASHBOARD
+       ================================ */
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(124, 92, 255, .12), transparent 28%),
+        radial-gradient(circle at 90% 15%, rgba(0, 190, 255, .10), transparent 25%),
+        #f6f8ff;
+      color: #15162b;
+      overflow-x: hidden;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    /* 3D background */
+
+    #three-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .page-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(120, 85, 255, .12),
+        transparent 68%
+      );
+      top: -220px;
+      right: -180px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* APP */
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      width: 250px;
+      min-height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      padding: 24px 16px;
+      background: rgba(255,255,255,.76);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-right: 1px solid rgba(120,120,170,.12);
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 8px 10px 28px;
+    }
+
+    .brand-nine {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      color: white;
+      font-size: 24px;
+      font-weight: 900;
+      background:
+        linear-gradient(135deg,#7157ff,#398dff 60%,#4ce0e9);
+      box-shadow:
+        0 12px 28px rgba(91,92,255,.28);
+    }
+
+    .brand-text strong {
+      display: block;
+      font-size: 17px;
+      letter-spacing: -.4px;
+    }
+
+    .brand-text span {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #7d8095;
+    }
+
+    .nav-title {
+      padding: 10px 12px;
+      color: #9a9daf;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav a,
+    .nav button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #626579;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 13px;
+      border-radius: 13px;
+      cursor: pointer;
+      text-align: left;
+      transition: .2s ease;
+    }
+
+    .nav a:hover,
+    .nav button:hover {
+      background: rgba(112,87,255,.08);
+      color: #5845d9;
+      transform: translateX(2px);
+    }
+
+    .nav a.active {
+      background: linear-gradient(
+        135deg,
+        rgba(112,87,255,.13),
+        rgba(65,143,255,.09)
+      );
+      color: #5743d8;
+      font-weight: 750;
+    }
+
+    .nav-icon {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(100,100,150,.07);
+      font-size: 15px;
+    }
+
+    .sidebar-bottom {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 20px;
+    }
+
+    .profile-mini {
+      padding: 13px;
+      border: 1px solid rgba(100,100,150,.10);
+      background: rgba(255,255,255,.72);
+      border-radius: 16px;
+    }
+
+    .profile-mini-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg,#6d58ff,#36a4ff);
+      color: white;
+      font-weight: 850;
+    }
+
+    .profile-name {
+      min-width: 0;
+    }
+
+    .profile-name strong {
+      display: block;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-name span {
+      display: block;
+      margin-top: 2px;
+      color: #9295a8;
+      font-size: 10px;
+    }
+
+    /* MAIN */
+
+    .main {
+      margin-left: 250px;
+      width: calc(100% - 250px);
+      padding: 28px 34px 50px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .welcome {
+      color: #888b9d;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 38px);
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+    }
+
+    .page-title span {
+      background: linear-gradient(90deg,#654df0,#258cff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 43px;
+      height: 43px;
+      border: 1px solid rgba(100,100,150,.11);
+      background: rgba(255,255,255,.75);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(50,60,120,.08);
+    }
+
+    /* HERO */
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 270px;
+      padding: 34px;
+      border-radius: 28px;
+      color: white;
+      background:
+        radial-gradient(circle at 80% 20%, rgba(111,230,255,.22), transparent 30%),
+        radial-gradient(circle at 60% 120%, rgba(115,81,255,.35), transparent 42%),
+        linear-gradient(125deg,#17152f,#30256c 55%,#1267ad);
+      box-shadow:
+        0 24px 60px rgba(52,47,130,.20);
+      isolation: isolate;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 310px;
+      height: 310px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 50%;
+      right: -70px;
+      top: -120px;
+      box-shadow:
+        0 0 0 35px rgba(255,255,255,.025),
+        0 0 0 75px rgba(255,255,255,.018);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "∑  π  √  x²  ∞";
+      position: absolute;
+      right: 40px;
+      bottom: 35px;
+      font-size: 22px;
+      letter-spacing: 15px;
+      color: rgba(255,255,255,.13);
+      transform: rotate(-8deg);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 650px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .hero h2 {
+      margin: 18px 0 10px;
+      font-size: clamp(28px,4vw,46px);
+      line-height: 1.03;
+      letter-spacing: -2px;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 570px;
+      color: rgba(255,255,255,.76);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 23px;
+      flex-wrap: wrap;
+    }
+
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .hero-btn.primary {
+      background: white;
+      color: #332b78;
+    }
+
+    .hero-btn.secondary {
+      color: white;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+    }
+
+    .hero-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* STATS */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .stat {
+      padding: 19px;
+      border-radius: 19px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(100,100,150,.10);
+      box-shadow: 0 12px 35px rgba(50,60,120,.05);
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-icon {
+      width: 35px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(102,78,240,.09);
+    }
+
+    .stat-label {
+      color: #8c8fa1;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      margin-top: 11px;
+      font-size: 25px;
+      font-weight: 850;
+      letter-spacing: -.8px;
+    }
+
+    .stat-sub {
+      margin-top: 3px;
+      color: #a0a2b2;
+      font-size: 10px;
+    }
+
+    /* SECTIONS */
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 19px;
+      letter-spacing: -.5px;
+    }
+
+    .section-link {
+      color: #6350df;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    /* CONTINUE */
+
+    .continue-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(100,100,150,.10);
+      box-shadow: 0 12px 35px rgba(50,60,120,.05);
+    }
+
+    .continue-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      min-width: 0;
+    }
+
+    .continue-icon {
+      flex: 0 0 auto;
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      color: white;
+      font-size: 21px;
+      background: linear-gradient(135deg,#6b55ed,#3b9eff);
+    }
+
+    .continue-info {
+      min-width: 0;
+    }
+
+    .continue-info small {
+      color: #8f92a4;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .continue-info strong {
+      display: block;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 14px;
+    }
+
+    .progress-wrap {
+      width: 180px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      color: #8d90a0;
+      font-size: 10px;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 7px;
+      background: #ececf5;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg,#7058ee,#37a6ff);
+      transition: width .5s ease;
+    }
+
+    .continue-btn {
+      border: 0;
+      background: #15142a;
+      color: white;
+      padding: 11px 15px;
+      border-radius: 11px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* CHAPTER GRID */
+
+    .chapter-grid {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 14px;
+    }
+
+    .chapter-card {
+      position: relative;
+      min-height: 185px;
+      padding: 18px;
+      overflow: hidden;
+      border-radius: 20px;
+      background: rgba(255,255,255,.80);
+      border: 1px solid rgba(100,100,150,.10);
+      box-shadow: 0 12px 35px rgba(50,60,120,.05);
+      transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+      cursor: pointer;
+    }
+
+    .chapter-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 45px rgba(50,60,120,.11);
+    }
+
+    .chapter-number {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: #5945db;
+      font-weight: 900;
+      background: linear-gradient(
+        135deg,
+        rgba(111,84,240,.12),
+        rgba(53,155,255,.10)
+      );
+    }
+
+    .chapter-card h3 {
+      margin: 17px 0 7px;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .chapter-card p {
+      margin: 0;
+      color: #9295a7;
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .chapter-card .mini-progress {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 17px;
+    }
+
+    .mini-progress-bar {
+      height: 5px;
+      background: #ececf5;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .mini-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg,#7159ed,#36a8ff);
+      border-radius: inherit;
+    }
+
+    /* LOWER GRID */
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.80);
+      border: 1px solid rgba(100,100,150,.10);
+      box-shadow: 0 12px 35px rgba(50,60,120,.05);
+    }
+
+    .empty {
+      padding: 30px 10px;
+      text-align: center;
+      color: #999cad;
+      font-size: 12px;
+    }
+
+    .empty-icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    /* MOBILE */
+
+    .mobile-header {
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .chapter-grid {
+        grid-template-columns: repeat(2,1fr);
+      }
+
+      .stats {
+        grid-template-columns: repeat(2,1fr);
+      }
+
+      .lower-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        margin-left: 0;
+        width: 100%;
+        padding: 18px 15px 40px;
+      }
+
+      .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 850;
+      }
+
+      .mobile-brand .brand-nine {
+        width: 36px;
+        height: 36px;
+        font-size: 19px;
+        border-radius: 11px;
+      }
+
+      .topbar {
+        margin-bottom: 18px;
+      }
+
+      .top-actions {
+        display: none;
+      }
+
+      .hero {
+        padding: 25px 21px;
+        min-height: 310px;
+        border-radius: 23px;
+      }
+
+      .hero::after {
+        right: 15px;
+        bottom: 20px;
+        font-size: 15px;
+      }
+
+      .stats {
+        gap: 10px;
+      }
+
+      .stat {
+        padding: 15px;
+      }
+
+      .continue-card {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .progress-wrap {
+        width: 100%;
+      }
+
+      .continue-btn {
+        width: 100%;
+      }
+
+      .chapter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="three-bg"></canvas>
+  <div class="page-glow"></div>
+
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <a href="dashboard.html" class="brand">
+        <div class="brand-nine">9</div>
+
+        <div class="brand-text">
+          <strong>StudyVerse</strong>
+          <span>CLASS 9</span>
+        </div>
+      </a>
+
+      <div class="nav-title">Workspace</div>
+
+      <nav class="nav">
+
+        <a href="dashboard.html" class="active">
+          <span class="nav-icon">⌂</span>
+          Dashboard
+        </a>
+
+        <a href="chapters.html">
+          <span class="nav-icon">∑</span>
+          Mathematics
+        </a>
+
+        <a href="chapters.html">
+          <span class="nav-icon">▦</span>
+          Chapters
+        </a>
+
+        <a href="chapters.html">
+          <span class="nav-icon">▶</span>
+          Videos
+        </a>
+
+        <a href="chapters.html">
+          <span class="nav-icon">▤</span>
+          Resources
+        </a>
+
+        <a href="chapters.html">
+          <span class="nav-icon">🔖</span>
+          Bookmarks
+        </a>
+
+      </nav>
+
+      <div class="nav-title" style="margin-top:18px;">
+        More
+      </div>
+
+      <nav class="nav">
+
+        <a href="index.html">
+          <span class="nav-icon">◎</span>
+          Public Website
+        </a>
+
+        <button onclick="handleLogout()">
+          <span class="nav-icon">↪</span>
+          Sign Out
+        </button>
+
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="profile-mini">
+
+          <div class="profile-mini-row">
+
+            <div class="avatar" data-user-initial>
+              S
+            </div>
+
+            <div class="profile-name">
+              <strong data-user-name>Student</strong>
+              <span data-user-email></span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <div class="mobile-header">
+
+        <a href="dashboard.html" class="mobile-brand">
+          <div class="brand-nine">9</div>
+          <span>StudyVerse</span>
+        </a>
+
+        <button class="icon-btn" onclick="handleLogout()">
+          ↪
+        </button>
+
+      </div>
+
+
+      <!-- TOP BAR -->
+      <div class="topbar">
+
+        <div>
+          <div class="welcome">
+            Welcome back,
+            <span data-user-name>Student</span> 👋
+          </div>
+
+          <h1 class="page-title">
+            Your <span>Learning Space</span>
+          </h1>
+        </div>
+
+        <div class="top-actions">
+
+          <button
+            class="icon-btn"
+            title="Search"
+            onclick="location.href='chapters.html'"
+          >
+            ⌕
+          </button>
+
+          <button
+            class="icon-btn"
+            title="Resources"
+            onclick="location.href='chapters.html'"
+          >
+            ▤
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- HERO -->
+      <section class="hero">
+
+        <div class="hero-content">
+
+          <div class="hero-badge">
+            ✦ Mathematics · Part 1
+          </div>
+
+          <h2>
+            Learn mathematics.<br>
+            Think beyond the page.
+          </h2>
+
+          <p>
+            Explore your Class 9 Mathematics curriculum through
+            chapters, original explanations, exercises, questions,
+            resources and interactive learning.
+          </p>
+
+          <div class="hero-actions">
+
+            <button
+              class="hero-btn primary"
+              onclick="location.href='chapters.html'"
+            >
+              Continue Learning →
+            </button>
+
+            <button
+              class="hero-btn secondary"
+              onclick="location.href='chapters.html'"
+            >
+              Explore Chapters
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- STATS -->
+      <section class="stats">
+
+        <div class="stat">
+
+          <div class="stat-top">
+            <span class="stat-label">Chapters</span>
+            <span class="stat-icon">∑</span>
+          </div>
+
+          <div class="stat-value" id="chapterCount">
+            8
+          </div>
+
+          <div class="stat-sub">
+            Mathematics Part 1
+          </div>
+
+        </div>
+
+
+        <div class="stat">
+
+          <div class="stat-top">
+            <span class="stat-label">Completed</span>
+            <span class="stat-icon">✓</span>
+          </div>
+
+          
