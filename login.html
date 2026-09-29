@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Login — StudyVerse 9</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- StudyVerse configuration -->
+  <script src="config.js"></script>
+
+  <!-- Shared application code -->
+  <script src="app.js"></script>
+
+  <!-- Brand styling -->
+  <link rel="stylesheet" href="brand.css">
+</head>
+
+<body class="auth-page">
+
+  <!-- 3D background -->
+  <canvas id="three-bg"></canvas>
+
+  <main class="auth-shell">
+
+    <!-- Brand -->
+    <a href="index.html" class="auth-brand">
+      <div class="brand-nine">9</div>
+
+      <div>
+        <strong>StudyVerse</strong>
+        <span>CLASS 9</span>
+      </div>
+    </a>
+
+    <!-- Login card -->
+    <section class="auth-card">
+
+      <div class="auth-heading">
+        <span class="eyebrow">WELCOME BACK</span>
+
+        <h1>Sign in to<br>StudyVerse 9.</h1>
+
+        <p>
+          Continue your learning journey, track your progress
+          and explore your Class 9 resources.
+        </p>
+      </div>
+
+      <form id="loginForm">
+
+        <div class="field">
+          <label for="email">Email address</label>
+
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="password">Password</label>
+
+            <button
+              type="button"
+              id="togglePassword"
+              class="password-toggle"
+            >
+              Show
+            </button>
+          </div>
+
+          <input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button
+          type="submit"
+          id="loginButton"
+          class="primary-btn"
+        >
+          <span id="loginButtonText">Sign in</span>
+        </button>
+
+        <p id="loginMessage" class="auth-message"></p>
+
+      </form>
+
+      <div class="auth-divider">
+        <span>NEW TO STUDYVERSE?</span>
+      </div>
+
+      <a href="register.html" class="secondary-btn">
+        Create student account
+      </a>
+
+      <a href="index.html" class="back-link">
+        ← Back to StudyVerse 9
+      </a>
+
+    </section>
+
+  </main>
+
+  <!-- 3D background script -->
+  <script src="three-bg.js"></script>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+
+    const loginButton = document.getElementById("loginButton");
+    const loginButtonText =
+      document.getElementById("loginButtonText");
+
+    const loginMessage =
+      document.getElementById("loginMessage");
+
+    const togglePassword =
+      document.getElementById("togglePassword");
+
+
+    /* -----------------------------
+       Check existing session
+    ----------------------------- */
+
+    async function checkSession() {
+      try {
+        const {
+          data: { session }
+        } = await sb.auth.getSession();
+
+        if (session) {
+          window.location.href = "dashboard.html";
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+
+    /* -----------------------------
+       Password visibility
+    ----------------------------- */
+
+    togglePassword.addEventListener("click", () => {
+
+      const isPassword =
+        passwordInput.type === "password";
+
+      passwordInput.type =
+        isPassword ? "text" : "password";
+
+      togglePassword.textContent =
+        isPassword ? "Hide" : "Show";
+    });
+
+
+    /* -----------------------------
+       Login
+    ----------------------------- */
+
+    form.addEventListener("submit", async (event) => {
+
+      event.preventDefault();
+
+      const email =
+        emailInput.value.trim();
+
+      const password =
+        passwordInput.value;
+
+
+      if (!email || !password) {
+        showMessage(
+          "Please enter your email and password.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      loginButton.disabled = true;
+
+      loginButtonText.textContent =
+        "Signing in...";
+
+      loginMessage.textContent = "";
+
+
+      try {
+
+        const { data, error } =
+          await sb.auth.signInWithPassword({
+            email,
+            password
+          });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (!data.session) {
+          throw new Error(
+            "Login succeeded, but no session was created."
+          );
+        }
+
+
+        showMessage(
+          "Login successful. Opening your dashboard...",
+          "success"
+        );
+
+
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 500);
+
+
+      } catch (error) {
+
+        console.error("Login error:", error);
+
+        let message =
+          "Unable to sign in. Please check your details.";
+
+        if (
+          error.message &&
+          error.message.toLowerCase().includes("invalid")
+        ) {
+          message =
+            "Incorrect email or password.";
+        }
+
+        showMessage(message, "error");
+
+        loginButton.disabled = false;
+
+        loginButtonText.textContent =
+          "Sign in";
+      }
+    });
+
+
+    /* -----------------------------
+       Message helper
+    ----------------------------- */
+
+    function showMessage(message, type) {
+
+      loginMessage.textContent = message;
+
+      loginMessage.dataset.type = type;
+    }
+
+
+    /* -----------------------------
+       Start
+    ----------------------------- */
+
+    checkSession();
+
+  </script>
+
+</body>
+  </html>
