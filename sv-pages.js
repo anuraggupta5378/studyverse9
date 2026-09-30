@@ -1,552 +1,605 @@
-/* StudyVerse 9 — reusable learning pages */
-
-const SV = {
-  chapters: [],
-  resources: [],
-  subjects: [],
-  ready: false
-};
-
-function svQ(name) {
-  return new URLSearchParams(location.search).get(name) || "";
-}
-
-function svNorm(v) {
-  return String(v ?? "").trim().toLowerCase();
-}
-
-function svEsc(v = "") {
-  return String(v).replace(/[&<>"']/g, m => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[m]));
-}
-
-function svLabel(v) {
-  return String(v || "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, c => c.toUpperCase());
-}
-
-function svChapterTitle(c) {
-  return c?.name || c?.title || c?.chapter_name || "Untitled chapter";
-}
-
-function svResourceTitle(r) {
-  return r?.title || r?.name || r?.resource_name || "Untitled resource";
-}
-
-function svResourceType(r) {
-  return r?.resource_type || r?.type || r?.kind || "resource";
-}
-
-function svChapterId(r) {
-  return r?.chapter_id || r?.chapter || r?.chapterId || "";
-}
-
-function svBook(c) {
-  return c?.book_name || c?.book || c?.book_title || "Ganita Manjari";
-}
-
-function svPart(c) {
-  return c?.part_name || c?.part || c?.part_title || "Part 1";
-}
-
-function svSubjectId(c) {
-  return c?.subject_id || c?.subject || c?.subjectId || "";
-}
-
-function svSubjectName(c) {
-  const id = svSubjectId(c);
-
-  const s = SV.subjects.find(
-    x => String(x.id) === String(id)
-  );
-
-  return (
-    s?.name ||
-    c?.subject_name ||
-    c?.subject_title ||
-    "Mathematics"
-  );
-}
-
-function svResourceUrl(r) {
-  return (
-    r?.external_url ||
-    r?.url ||
-    r?.video_url ||
-    r?.link ||
-    ""
-  );
-}
-
-function svResourcePath(r) {
-  return (
-    r?.file_path ||
-    r?.storage_path ||
-    r?.path ||
-    r?.file ||
-    ""
-  );
-}
-
-
 /* =========================================================
-   INITIALISE LEARNING DATA
+   StudyVerse 9 — Learning Pages Engine
    ========================================================= */
 
-async function svInit() {
+(function () {
 
-  if (SV.ready) return;
+  "use strict";
 
-  const u = await requireAuth("index.html");
+  const SV = {
+    chapters: [],
+    resources: [],
+    ready: false
+  };
 
-  if (!u) return;
+  window.SV = SV;
 
-  try {
 
-    const [ch, rs, sub] = await Promise.all([
+  /* -------------------------------------------------------
+     Helpers
+     ------------------------------------------------------- */
 
-      sb
-        .from("chapters")
-        .select("*")
-        .eq("is_published", true)
-        .order("display_order", {
-          ascending: true
-        }),
+  function esc(value = "") {
+    return String(value).replace(/[&<>"']/g, function (m) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[m];
+    });
+  }
 
-      sb
-        .from("resources")
-        .select("*")
-        .order("created_at", {
-          ascending: false
-        }),
+  function norm(value = "") {
+    return String(value || "").trim().toLowerCase();
+  }
 
-      sb
-        .from("subjects")
-        .select("*")
-        .order("name", {
-          ascending: true
-        })
+  function param(name) {
+    return new URLSearchParams(
+      window.location.search
+    ).get(name) || "";
+  }
 
-    ]);
+  function pageName() {
+    return location.pathname
+      .split("/")
+      .pop()
+      .toLowerCase()
+      .replace(".html", "");
+  }
 
-    if (ch.error) throw ch.error;
-    if (rs.error) throw rs.error;
-    if (sub.error) throw sub.error;
+  function chapterTitle(c) {
+    return c?.name ||
+           c?.title ||
+           c?.chapter_name ||
+           "Untitled chapter";
+  }
 
-    SV.chapters = (ch.data || []).filter(
-      c =>
-        !/^number systems$/i.test(
-          svChapterTitle(c)
-        )
-    );
+  function resourceTitle(r) {
+    return r?.title ||
+           r?.name ||
+           r?.resource_name ||
+           "Untitled resource";
+  }
 
-    SV.resources = rs.data || [];
-    SV.subjects = sub.data || [];
+  function resourceType(r) {
+    return r?.resource_type ||
+           r?.type ||
+           r?.kind ||
+           "resource";
+  }
 
-    SV.ready = true;
+  function resourceChapterId(r) {
+    return r?.chapter_id ||
+           r?.chapter ||
+           r?.chapterId ||
+           "";
+  }
 
-  } catch (e) {
+  function resourcePath(r) {
+    return r?.file_path ||
+           r?.storage_path ||
+           r?.path ||
+           r?.file ||
+           "";
+  }
 
-    console.error(e);
+  function resourceUrl(r) {
+    return r?.external_url ||
+           r?.url ||
+           r?.video_url ||
+           r?.link ||
+           "";
+  }
 
-    const root = document.getElementById("svApp");
 
-    if (root) {
+  /* -------------------------------------------------------
+     Header
+     ------------------------------------------------------- */
 
-      root.innerHTML =
-        '<div class="sv-empty sv-danger">' +
-        'Could not load the learning library. ' +
-        'Please refresh and try again.' +
-        '</div>';
+  window.svHeader = function () {
+
+    return `
+      <header class="sv-top">
+
+        <div class="sv-top-inner">
+
+          <a
+            href="dashboard.html"
+            class="sv-brand"
+          >
+            StudyVerse <span>9</span>
+          </a>
+
+          <div class="sv-spacer"></div>
+
+          <a href="dashboard.html">
+            Dashboard
+          </a>
+
+          <button
+            class="sv-btn"
+            onclick="svLogout()"
+          >
+            Sign out
+          </button>
+
+        </div>
+
+      </header>
+    `;
+  };
+
+
+  window.svLogout = async function () {
+
+    try {
+
+      await sb.auth.signOut();
+
+    } finally {
+
+      location.href = "index.html";
 
     }
-  }
-}
+
+  };
 
 
-/* =========================================================
-   COMMON HEADER
-   ========================================================= */
+  /* -------------------------------------------------------
+     Load database
+     ------------------------------------------------------- */
 
-function svHeader(title) {
+  async function init() {
 
-  return `
-    <header class="sv-top">
+    if (SV.ready) {
+      return true;
+    }
 
-      <div class="sv-top-inner">
+    const root =
+      document.getElementById("svApp");
 
-        <a
-          class="sv-brand"
-          href="dashboard.html"
-        >
-          StudyVerse <span>9</span>
-        </a>
+    try {
 
-        <div class="sv-spacer"></div>
-
-        <a href="dashboard.html">
-          Dashboard
-        </a>
-
-        <button
-          class="sv-btn"
-          onclick="signOut()"
-        >
-          Sign out
-        </button>
-
-      </div>
-
-    </header>
-  `;
-}
+      if (
+        typeof sb === "undefined"
+      ) {
+        throw new Error(
+          "Supabase client was not loaded."
+        );
+      }
 
 
-/* =========================================================
-   CHAPTER CARD
-   ========================================================= */
+      const user =
+        await currentUser();
 
-function svChapterCard(c, mode) {
+      if (!user) {
 
-  const id = encodeURIComponent(c.id);
+        location.href = "index.html";
 
-  const qs =
-    `?chapter_id=${id}`;
-
-  const page = {
-    notes: "notes.html",
-    solutions: "solutions.html",
-    exercises: "exercises.html",
-    important: "important.html",
-    videos: "videos.html",
-    practice: "practice.html",
-    pdf: "pdfs.html"
-  }[mode] || "library.html";
-
-  return `
-    <article class="sv-card">
-
-      <div class="sv-icon">
-        ∑
-      </div>
-
-      <div class="sv-meta">
-        ${svEsc(svSubjectName(c))}
-        ·
-        ${svEsc(svBook(c))}
-        ·
-        ${svEsc(svPart(c))}
-      </div>
-
-      <h3>
-        ${svEsc(svChapterTitle(c))}
-      </h3>
-
-      <p>
-        Select this chapter to continue to
-        its ${svEsc(mode)} resources.
-      </p>
-
-      <div class="sv-actions">
-
-        <a
-          class="sv-btn primary"
-          href="${page}${qs}"
-        >
-          Open →
-        </a>
-
-      </div>
-
-    </article>
-  `;
-}
+        return false;
+      }
 
 
-/* =========================================================
-   RESOURCE CARD
-   ========================================================= */
+      /* Only load the two tables this
+         learning system actually needs. */
 
-function svResourceCard(r) {
+      const chapterResult =
+        await sb
+          .from("chapters")
+          .select("*")
+          .eq("is_published", true)
+          .order(
+            "display_order",
+            { ascending: true }
+          );
 
-  return `
-    <article class="sv-row">
 
-      <div class="sv-row-left">
+      if (chapterResult.error) {
+        throw chapterResult.error;
+      }
 
-        <div class="sv-icon">
-          ${svEsc(
-            svResourceType(r)
-              .slice(0, 1)
-              .toUpperCase()
-          )}
-        </div>
 
-        <div>
+      const resourceResult =
+        await sb
+          .from("resources")
+          .select("*")
+          .order(
+            "created_at",
+            { ascending: false }
+          );
 
-          <div class="sv-row-title">
-            ${svEsc(svResourceTitle(r))}
+
+      if (resourceResult.error) {
+        throw resourceResult.error;
+      }
+
+
+      SV.chapters =
+        (chapterResult.data || [])
+          .filter(function (c) {
+
+            return !/^number systems$/i.test(
+              chapterTitle(c)
+            );
+
+          });
+
+
+      SV.resources =
+        resourceResult.data || [];
+
+
+      SV.ready = true;
+
+      return true;
+
+    } catch (error) {
+
+      console.error(
+        "StudyVerse learning engine:",
+        error
+      );
+
+
+      if (root) {
+
+        root.innerHTML = `
+
+          <div class="sv-empty sv-danger">
+
+            <h3>
+              We couldn't load this page.
+            </h3>
+
+            <p>
+              Please refresh the page.
+            </p>
+
+            <button
+              class="sv-btn primary"
+              onclick="location.reload()"
+            >
+              Refresh
+            </button>
+
           </div>
 
-          <small>
-            ${svEsc(
-              svLabel(svResourceType(r))
-            )}
-          </small>
+        `;
+
+      }
+
+      return false;
+    }
+
+  }
+
+
+  /* -------------------------------------------------------
+     Resource opening
+     ------------------------------------------------------- */
+
+  window.svOpenResource = async function (resource) {
+
+    try {
+
+      const path =
+        resourcePath(resource);
+
+      if (path) {
+
+        const url =
+          await signedFile(path);
+
+        window.open(
+          url,
+          "_blank",
+          "noopener"
+        );
+
+        return;
+      }
+
+
+      const url =
+        resourceUrl(resource);
+
+      if (url) {
+
+        window.open(
+          url,
+          "_blank",
+          "noopener"
+        );
+
+        return;
+      }
+
+
+      if (typeof toast === "function") {
+
+        toast(
+          "This resource has no file or link yet.",
+          "error"
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+      if (typeof toast === "function") {
+
+        toast(
+          "Unable to open this resource.",
+          "error"
+        );
+
+      }
+
+    }
+
+  };
+
+
+  /* -------------------------------------------------------
+     Chapter card
+     ------------------------------------------------------- */
+
+  function chapterCard(chapter, mode) {
+
+    const id =
+      encodeURIComponent(
+        chapter.id
+      );
+
+    const target =
+      `${mode}.html?chapter_id=${id}`;
+
+
+    return `
+
+      <article class="sv-card">
+
+        <div class="sv-icon">
+          ∑
+        </div>
+
+        <div class="sv-meta">
+          MATHEMATICS · GANITA MANJARI
+        </div>
+
+        <h3>
+          ${esc(
+            chapterTitle(chapter)
+          )}
+        </h3>
+
+        <p>
+          Select this chapter to open its
+          ${esc(mode)} resources.
+        </p>
+
+        <div class="sv-actions">
+
+          <a
+            class="sv-btn primary"
+            href="${target}"
+          >
+            Open →
+          </a>
 
         </div>
 
-      </div>
+      </article>
 
-      <div class="sv-actions">
+    `;
+  }
+
+
+  /* -------------------------------------------------------
+     Resource card
+     ------------------------------------------------------- */
+
+  function resourceCard(resource) {
+
+    return `
+
+      <article class="sv-row">
+
+        <div class="sv-row-left">
+
+          <div class="sv-icon">
+            ${esc(
+              resourceType(resource)
+                .charAt(0)
+                .toUpperCase()
+            )}
+          </div>
+
+          <div>
+
+            <div class="sv-row-title">
+              ${esc(
+                resourceTitle(resource)
+              )}
+            </div>
+
+            <small>
+              ${esc(
+                resourceType(resource)
+              )}
+            </small>
+
+          </div>
+
+        </div>
 
         <button
           class="sv-btn primary"
-          onclick='svOpenResource(${JSON.stringify(r).replace(/</g, "\\u003c")})'
+          onclick='svOpenResource(${JSON.stringify(resource).replace(/</g, "\\u003c")})'
         >
           Open
         </button>
 
-      </div>
+      </article>
 
-    </article>
-  `;
-}
-
-
-/* =========================================================
-   OPEN RESOURCE
-   ========================================================= */
-
-async function svOpenResource(r) {
-
-  try {
-
-    await openResource(r);
-
-  } catch (e) {
-
-    console.error(e);
-
-    toast(
-      "Unable to open this resource.",
-      "error"
-    );
-
+    `;
   }
-}
 
 
-/* =========================================================
-   CURRENT PAGE
-   ========================================================= */
+  /* -------------------------------------------------------
+     Learning page
+     ------------------------------------------------------- */
 
-function svModeFromPage() {
+  async function loadLearningPage() {
 
-  const p =
-    location.pathname
-      .split("/")
-      .pop()
-      .toLowerCase();
-
-  return p.replace(".html", "");
-}
-
-
-/* =========================================================
-   FILTER CHAPTERS
-   ========================================================= */
-
-function svFilterChapters(mode) {
-
-  const q = svNorm(
-    svQ("q")
-  );
-
-  return SV.chapters.filter(c => {
-
-    if (!q) return true;
-
-    return [
-      svChapterTitle(c),
-      svBook(c),
-      svPart(c),
-      svSubjectName(c)
-    ].some(v =>
-      svNorm(v).includes(q)
-    );
-
-  });
-}
-
-
-/* =========================================================
-   NOTES / SOLUTIONS / EXERCISES / ETC.
-   ========================================================= */
-
-function svRenderChapterMode(mode) {
-
-  const root =
-    document.getElementById("svApp");
-
-  const chapterId =
-    svQ("chapter_id");
-
-  const q =
-    svQ("q");
-
-  if (chapterId) {
-
-    const c =
-      SV.chapters.find(
-        x =>
-          String(x.id) ===
-          String(chapterId)
+    const root =
+      document.getElementById(
+        "svApp"
       );
 
-    if (!c) {
-
-      root.innerHTML =
-        '<div class="sv-empty">' +
-        'Chapter not found.' +
-        '</div>';
-
+    if (!root) {
       return;
     }
 
-    const types = {
 
-      notes: [
-        "note",
-        "notes"
-      ],
+    const loaded =
+      await init();
 
-      solutions: [
-        "solution",
-        "solutions"
-      ],
-
-      exercises: [
-        "exercise",
-        "exercises"
-      ],
-
-      important: [
-        "important",
-        "important_question",
-        "important questions"
-      ],
-
-      videos: [
-        "video",
-        "videos"
-      ],
-
-      practice: [
-        "practice",
-        "practices"
-      ],
-
-      pdfs: [
-        "pdf",
-        "pdfs",
-        "book"
-      ]
-
-    };
-
-    const allowed =
-      (types[mode] || [])
-        .map(svNorm);
-
-    let rs =
-      SV.resources.filter(
-        r =>
-          String(
-            svChapterId(r)
-          ) === String(c.id)
-      );
-
-    if (allowed.length) {
-
-      rs = rs.filter(r =>
-
-        allowed.includes(
-          svNorm(
-            svResourceType(r)
-          )
-        )
-
-        ||
-
-        allowed.some(a =>
-          svNorm(
-            svResourceTitle(r)
-          ).includes(a)
-        )
-
-      );
-
+    if (!loaded) {
+      return;
     }
 
-    root.innerHTML = `
 
-      <div class="sv-crumbs">
+    const mode =
+      pageName();
 
-        <button
-          onclick="history.back()"
-        >
-          ← Back
-        </button>
 
-        <span>/</span>
+    const chapterId =
+      param("chapter_id");
 
-        <span>
-          ${svEsc(
-            svChapterTitle(c)
+
+    /* -----------------------------------------------------
+       Chapter selected
+       ----------------------------------------------------- */
+
+    if (chapterId) {
+
+      const chapter =
+        SV.chapters.find(function (c) {
+
+          return String(c.id) ===
+                 String(chapterId);
+
+        });
+
+
+      if (!chapter) {
+
+        root.innerHTML = `
+
+          <div class="sv-empty">
+
+            <h3>
+              Chapter not found
+            </h3>
+
+            <a
+              class="sv-btn primary"
+              href="${mode}.html"
+            >
+              Back
+            </a>
+
+          </div>
+
+        `;
+
+        return;
+      }
+
+
+      let resources =
+        SV.resources.filter(function (r) {
+
+          return String(
+            resourceChapterId(r)
+          ) === String(chapter.id);
+
+        });
+
+
+      const search =
+        norm(param("q"));
+
+
+      if (search) {
+
+        resources =
+          resources.filter(function (r) {
+
+            return [
+
+              resourceTitle(r),
+              resourceType(r),
+              r.description
+
+            ].some(function (value) {
+
+              return norm(value)
+                .includes(search);
+
+            });
+
+          });
+
+      }
+
+
+      root.innerHTML = `
+
+        <div class="sv-crumbs">
+
+          <a
+            href="${mode}.html"
+          >
+            ← Back to ${esc(mode)}
+          </a>
+
+        </div>
+
+        <div class="sv-kicker">
+          STUDYVERSE 9 · MATHEMATICS
+        </div>
+
+        <h1 class="sv-title">
+          ${esc(
+            chapterTitle(chapter)
           )}
-        </span>
+        </h1>
 
-      </div>
+        <p class="sv-sub">
+          ${esc(
+            mode.charAt(0).toUpperCase() +
+            mode.slice(1)
+          )}
+        </p>
 
-      <div class="sv-kicker">
-        ${svEsc(
-          svLabel(mode)
-        )}
-      </div>
-
-      <h1 class="sv-title">
-        ${svEsc(
-          svChapterTitle(c)
-        )}
-      </h1>
-
-      <p class="sv-sub">
-        ${svEsc(svBook(c))}
-        ·
-        ${svEsc(svPart(c))}
-        ·
-        ${svEsc(svSubjectName(c))}
-      </p>
-
-      <section class="sv-panel">
 
         <div class="sv-toolbar">
 
           <input
+            id="svLocalSearch"
             class="sv-search"
-            placeholder="Filter this chapter..."
-            value="${svEsc(q)}"
-            oninput="svLocalFilter(this.value)"
+            placeholder="Search within this chapter..."
+            value="${esc(search)}"
           >
 
         </div>
+
 
         <div
           id="svResourceList"
@@ -554,809 +607,682 @@ function svRenderChapterMode(mode) {
         >
 
           ${
-            rs.length
-              ? rs.map(
-                  svResourceCard
-                ).join("")
+            resources.length
+              ? resources
+                  .map(resourceCard)
+                  .join("")
               : `
+
                 <div class="sv-empty">
-                  No published resources of this type
-                  are available for this chapter yet.
+
+                  <h3>
+                    No ${esc(mode)}
+                    available yet
+                  </h3>
+
+                  <p>
+                    This chapter is ready for content.
+                    Resources will appear here when
+                    they are published.
+                  </p>
+
                 </div>
+
               `
           }
 
         </div>
 
-      </section>
-
-    `;
-
-    return;
-  }
-
-
-  /* =======================================================
-     CHAPTER SELECTION
-     ======================================================= */
-
-  const chapters =
-    svFilterChapters(mode);
-
-  root.innerHTML = `
-
-    <div class="sv-kicker">
-      StudyVerse 9 · Mathematics
-    </div>
-
-    <h1 class="sv-title">
-      ${svEsc(
-        svLabel(mode)
-      )}
-    </h1>
-
-    <p class="sv-sub">
-      Choose a chapter. This page is dedicated
-      to ${svEsc(
-        svLabel(mode)
-      )}.
-    </p>
-
-    <div class="sv-toolbar">
-
-      <input
-        id="svChapterSearch"
-        class="sv-search"
-        placeholder="Search chapters, books or parts..."
-        value="${svEsc(q)}"
-        oninput="svChapterSearch(this.value)"
-      >
-
-    </div>
-
-    <div
-      id="svChapterGrid"
-      class="sv-grid"
-    >
-
-      ${
-        chapters.length
-          ? chapters
-              .map(
-                c =>
-                  svChapterCard(
-                    c,
-                    mode
-                  )
-              )
-              .join("")
-          : `
-            <div class="sv-empty">
-              No matching chapters found.
-            </div>
-          `
-      }
-
-    </div>
-
-  `;
-}
-
-
-/* =========================================================
-   FILTER RESOURCES INSIDE CHAPTER
-   ========================================================= */
-
-function svLocalFilter(q) {
-
-  const mode =
-    svModeFromPage();
-
-  const cId =
-    svQ("chapter_id");
-
-  const c =
-    SV.chapters.find(
-      x =>
-        String(x.id) ===
-        String(cId)
-    );
-
-  const types = {
-
-    notes: [
-      "note",
-      "notes"
-    ],
-
-    solutions: [
-      "solution",
-      "solutions"
-    ],
-
-    exercises: [
-      "exercise",
-      "exercises"
-    ],
-
-    important: [
-      "important",
-      "important_question",
-      "important questions"
-    ],
-
-    videos: [
-      "video",
-      "videos"
-    ],
-
-    practice: [
-      "practice",
-      "practices"
-    ],
-
-    pdfs: [
-      "pdf",
-      "pdfs",
-      "book"
-    ]
-
-  };
-
-  const allowed =
-    (types[mode] || [])
-      .map(svNorm);
-
-  let rs =
-    SV.resources.filter(
-      r =>
-        String(
-          svChapterId(r)
-        ) ===
-        String(c?.id)
-    );
-
-  if (allowed.length) {
-
-    rs = rs.filter(r =>
-
-      allowed.includes(
-        svNorm(
-          svResourceType(r)
-        )
-      )
-
-      ||
-
-      allowed.some(a =>
-        svNorm(
-          svResourceTitle(r)
-        ).includes(a)
-      )
-
-    );
-
-  }
-
-  q =
-    svNorm(q);
-
-  if (q) {
-
-    rs =
-      rs.filter(r =>
-        [
-          svResourceTitle(r),
-          svResourceType(r),
-          r.description
-        ].some(v =>
-          svNorm(v).includes(q)
-        )
-      );
-
-  }
-
-  document
-    .getElementById(
-      "svResourceList"
-    )
-    .innerHTML =
-      rs.length
-        ? rs.map(
-            svResourceCard
-          ).join("")
-        : `
-          <div class="sv-empty">
-            No matching resources.
-          </div>
-        `;
-}
-
-
-/* =========================================================
-   CHAPTER SEARCH
-   ========================================================= */
-
-function svChapterSearch(q) {
-
-  const mode =
-    svModeFromPage();
-
-  const cards =
-    SV.chapters.filter(c =>
-      [
-        svChapterTitle(c),
-        svBook(c),
-        svPart(c),
-        svSubjectName(c)
-      ].some(v =>
-        svNorm(v).includes(
-          svNorm(q)
-        )
-      )
-    );
-
-  document
-    .getElementById(
-      "svChapterGrid"
-    )
-    .innerHTML =
-      cards.length
-        ? cards.map(
-            c =>
-              svChapterCard(
-                c,
-                mode
-              )
-          ).join("")
-        : `
-          <div class="sv-empty">
-            No matching chapters found.
-          </div>
-        `;
-}
-
-
-/* =========================================================
-   LOAD LEARNING MODE
-   ========================================================= */
-
-async function svLoadMode() {
-
-  await svInit();
-
-  const root =
-    document.getElementById(
-      "svApp"
-    );
-
-  if (
-    !root ||
-    !SV.ready
-  ) return;
-
-  root.innerHTML =
-    '<div class="sv-loading">' +
-    'Loading your learning library…' +
-    '</div>';
-
-  svRenderChapterMode(
-    svModeFromPage()
-  );
-}
-
-
-/* =========================================================
-   LIBRARY
-   ========================================================= */
-
-async function svLoadLibrary() {
-
-  await svInit();
-
-  const root =
-    document.getElementById(
-      "svApp"
-    );
-
-  if (
-    !root ||
-    !SV.ready
-  ) return;
-
-  root.innerHTML = `
-
-    <div class="sv-kicker">
-      StudyVerse 9 · Library
-    </div>
-
-    <h1 class="sv-title">
-      Choose where to learn.
-    </h1>
-
-    <p class="sv-sub">
-      Subject → Book → Part → Chapter.
-      Then open the learning function you need.
-    </p>
-
-    <div class="sv-grid">
-
-      ${
-        SV.chapters.map(c => `
-
-          <article class="sv-card">
-
-            <div class="sv-meta">
-              ${svEsc(
-                svSubjectName(c)
-              )}
-            </div>
-
-            <h3>
-              ${svEsc(
-                svChapterTitle(c)
-              )}
-            </h3>
-
-            <p>
-              ${svEsc(
-                svBook(c)
-              )}
-              ·
-              ${svEsc(
-                svPart(c)
-              )}
-            </p>
-
-            <div class="sv-actions">
-
-              <a
-                class="sv-btn primary"
-                href="notes.html?chapter_id=${encodeURIComponent(c.id)}"
-              >
-                Notes
-              </a>
-
-              <a
-                class="sv-btn"
-                href="solutions.html?chapter_id=${encodeURIComponent(c.id)}"
-              >
-                Solutions
-              </a>
-
-              <a
-                class="sv-btn"
-                href="exercises.html?chapter_id=${encodeURIComponent(c.id)}"
-              >
-                Exercises
-              </a>
-
-            </div>
-
-          </article>
-
-        `).join("")
-
-      }
-
-    </div>
-
-  `;
-}
-
-
-/* =========================================================
-   GLOBAL SEARCH
-   ========================================================= */
-
-async function svLoadSearch() {
-
-  const u =
-    await requireAuth(
-      "index.html"
-    );
-
-  if (!u) return;
-
-  const root =
-    document.getElementById(
-      "svApp"
-    );
-
-  root.innerHTML = `
-
-    <div class="sv-kicker">
-      StudyVerse 9 · Search
-    </div>
-
-    <h1 class="sv-title">
-      Search the learning library.
-    </h1>
-
-    <p class="sv-sub">
-      Results update as you type.
-      Search uses the StudyVerse database.
-    </p>
-
-    <div class="sv-toolbar">
-
-      <input
-        id="svGlobalSearch"
-        autofocus
-        class="sv-search"
-        placeholder="Try probability, linear, exercise, or a chapter name..."
-      >
-
-    </div>
-
-    <div
-      id="svSearchResults"
-      class="sv-list"
-    ></div>
-
-  `;
-
-  const input =
-    document.getElementById(
-      "svGlobalSearch"
-    );
-
-  let timer = null;
-
-  input.addEventListener(
-    "input",
-    () => {
-
-      clearTimeout(timer);
-
-      timer =
-        setTimeout(
-          () =>
-            svDoDatabaseSearch(
-              input.value
-            ),
-          180
-        );
-
-    }
-  );
-
-  svDoDatabaseSearch("");
-}
-
-
-/* =========================================================
-   CLEAN SEARCH QUERY
-   ========================================================= */
-
-function svSafeSearch(q) {
-
-  return String(q || "")
-    .replace(
-      /[%_,()]/g,
-      " "
-    )
-    .replace(
-      /\s+/g,
-      " "
-    )
-    .trim();
-}
-
-
-/* =========================================================
-   DATABASE SEARCH
-   ========================================================= */
-
-async function svDoDatabaseSearch(q) {
-
-  const box =
-    document.getElementById(
-      "svSearchResults"
-    );
-
-  if (!box) return;
-
-  q =
-    svSafeSearch(q);
-
-  if (!q) {
-
-    box.innerHTML = `
-      <div class="sv-empty">
-        Start typing to search published
-        chapters and resources.
-      </div>
-    `;
-
-    return;
-  }
-
-  box.innerHTML =
-    '<div class="sv-loading">' +
-    'Searching…' +
-    '</div>';
-
-  try {
-
-    const pattern =
-      `%${q}%`;
-
-    const [ch, rs] =
-      await Promise.all([
-
-        sb
-          .from("chapters")
-          .select("*")
-          .eq("is_published", true)
-          .or(
-            `name.ilike.${pattern},title.ilike.${pattern}`
-          )
-          .limit(20),
-
-        sb
-          .from("resources")
-          .select("*")
-          .or(
-            `title.ilike.${pattern},name.ilike.${pattern},resource_type.ilike.${pattern}`
-          )
-          .limit(30)
-
-      ]);
-
-    if (ch.error)
-      throw ch.error;
-
-    if (rs.error)
-      throw rs.error;
-
-    const chapters =
-      (ch.data || [])
-        .filter(
-          c =>
-            !/^number systems$/i.test(
-              svChapterTitle(c)
-            )
-        );
-
-    const resources =
-      rs.data || [];
-
-    const chHtml =
-      chapters
-        .map(c => `
-
-          <div class="sv-row">
-
-            <div class="sv-row-left">
-
-              <div class="sv-icon">
-                ∑
-              </div>
-
-              <div>
-
-                <div class="sv-row-title">
-                  ${svEsc(
-                    svChapterTitle(c)
-                  )}
-                </div>
-
-                <small>
-                  ${svEsc(
-                    svSubjectName(c)
-                  )}
-                  ·
-                  ${svEsc(
-                    svBook(c)
-                  )}
-                  ·
-                  ${svEsc(
-                    svPart(c)
-                  )}
-                </small>
-
-              </div>
-
-            </div>
-
-            <a
-              class="sv-btn primary"
-              href="notes.html?chapter_id=${encodeURIComponent(c.id)}"
-            >
-              Open
-            </a>
-
-          </div>
-
-        `)
-        .join("");
-
-    const rsHtml =
-      resources
-        .map(
-          svResourceCard
-        )
-        .join("");
-
-    box.innerHTML =
-      (
-        chHtml +
-        rsHtml
-      )
-      ||
-      `
-        <div class="sv-empty">
-          No matching content yet.
-        </div>
       `;
 
-  } catch (e) {
 
-    console.error(e);
-
-    box.innerHTML = `
-      <div class="sv-empty sv-danger">
-        Search could not be completed.
-        Check the published database fields
-        and try again.
-      </div>
-    `;
-  }
-}
+      const input =
+        document.getElementById(
+          "svLocalSearch"
+        );
 
 
-/* =========================================================
-   BOOKMARKS
-   ========================================================= */
+      if (input) {
 
-async function svLoadBookmarks() {
+        input.addEventListener(
+          "input",
+          function () {
 
-  const u =
-    await requireAuth(
-      "index.html"
-    );
+            const q =
+              norm(input.value);
 
-  if (!u) return;
 
-  const root =
-    document.getElementById(
-      "svApp"
-    );
+            const filtered =
+              resources.filter(function (r) {
 
-  try {
+                return [
 
-    const {
-      data,
-      error
-    } =
-      await sb
-        .from("bookmarks")
-        .select("*")
-        .eq(
-          "user_id",
-          u.id
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false
+                  resourceTitle(r),
+                  resourceType(r),
+                  r.description
+
+                ].some(function (value) {
+
+                  return norm(value)
+                    .includes(q);
+
+                });
+
+              });
+
+
+            document
+              .getElementById(
+                "svResourceList"
+              )
+              .innerHTML =
+                filtered.length
+                  ? filtered
+                      .map(resourceCard)
+                      .join("")
+                  : `
+                    <div class="sv-empty">
+                      No matching resources.
+                    </div>
+                  `;
+
           }
         );
 
-    if (error)
-      throw error;
+      }
+
+
+      return;
+    }
+
+
+    /* -----------------------------------------------------
+       Chapter selection
+       ----------------------------------------------------- */
+
+    let chapters =
+      SV.chapters.slice();
+
+
+    const query =
+      norm(param("q"));
+
+
+    if (query) {
+
+      chapters =
+        chapters.filter(function (c) {
+
+          return [
+
+            chapterTitle(c),
+            c.book_name,
+            c.book,
+            c.part_name,
+            c.part
+
+          ].some(function (value) {
+
+            return norm(value)
+              .includes(query);
+
+          });
+
+        });
+
+    }
+
 
     root.innerHTML = `
 
       <div class="sv-kicker">
-        StudyVerse 9 · Bookmarks
+        STUDYVERSE 9 · MATHEMATICS
       </div>
 
       <h1 class="sv-title">
-        Saved for later.
+        ${esc(
+          mode.charAt(0).toUpperCase() +
+          mode.slice(1)
+        )}
       </h1>
 
       <p class="sv-sub">
-        Your saved learning resources appear here.
+        Choose a chapter to continue.
       </p>
 
-      <div class="sv-list">
+
+      <div class="sv-toolbar">
+
+        <input
+          id="svChapterSearch"
+          class="sv-search"
+          placeholder="Search chapters..."
+          value="${esc(query)}"
+        >
+
+      </div>
+
+
+      <div
+        id="svChapterGrid"
+        class="sv-grid"
+      >
 
         ${
-          (data || [])
-            .map(x => `
+          chapters.length
+            ? chapters
+                .map(function (c) {
 
-              <div class="sv-row">
+                  return chapterCard(
+                    c,
+                    mode
+                  );
 
-                <div>
+                })
+                .join("")
+            : `
 
-                  <div class="sv-row-title">
-                    ${svEsc(
-                      x.title ||
-                      x.resource_id ||
-                      "Saved resource"
-                    )}
-                  </div>
+              <div class="sv-empty">
 
-                  <small>
-                    ${svEsc(
-                      x.resource_id ||
-                      ""
-                    )}
-                  </small>
-
-                </div>
+                No matching chapters found.
 
               </div>
 
-            `)
-            .join("")
-
-          ||
-
-          `
-            <div class="sv-empty">
-              You have no bookmarks yet.
-            </div>
-          `
+            `
         }
 
       </div>
 
     `;
 
-  } catch (e) {
 
-    console.error(e);
+    const searchBox =
+      document.getElementById(
+        "svChapterSearch"
+      );
+
+
+    if (searchBox) {
+
+      searchBox.addEventListener(
+        "input",
+        function () {
+
+          const q =
+            norm(searchBox.value);
+
+
+          const filtered =
+            SV.chapters.filter(
+              function (c) {
+
+                return [
+
+                  chapterTitle(c),
+                  c.book_name,
+                  c.book,
+                  c.part_name,
+                  c.part
+
+                ].some(function (value) {
+
+                  return norm(value)
+                    .includes(q);
+
+                });
+
+              }
+            );
+
+
+          document
+            .getElementById(
+              "svChapterGrid"
+            )
+            .innerHTML =
+              filtered.length
+                ? filtered
+                    .map(function (c) {
+
+                      return chapterCard(
+                        c,
+                        mode
+                      );
+
+                    })
+                    .join("")
+                : `
+
+                  <div class="sv-empty">
+                    No matching chapters found.
+                  </div>
+
+                `;
+
+        }
+      );
+
+    }
+
+  }
+
+
+  /* -------------------------------------------------------
+     Library page
+     ------------------------------------------------------- */
+
+  async function loadLibrary() {
+
+    const root =
+      document.getElementById(
+        "svApp"
+      );
+
+    if (!root) return;
+
+
+    const loaded =
+      await init();
+
+    if (!loaded) return;
+
 
     root.innerHTML = `
-      <div class="sv-empty sv-danger">
-        Could not load bookmarks.
+
+      <div class="sv-kicker">
+        STUDYVERSE 9 · LIBRARY
       </div>
+
+      <h1 class="sv-title">
+        Learning Library
+      </h1>
+
+      <p class="sv-sub">
+        Choose a chapter and then choose
+        exactly how you want to learn.
+      </p>
+
+
+      <div class="sv-grid">
+
+        ${
+          SV.chapters.map(function (c) {
+
+            const id =
+              encodeURIComponent(c.id);
+
+            return `
+
+              <article class="sv-card">
+
+                <div class="sv-meta">
+                  MATHEMATICS · GANITA MANJARI
+                </div>
+
+                <h3>
+                  ${esc(
+                    chapterTitle(c)
+                  )}
+                </h3>
+
+                <div class="sv-actions">
+
+                  <a
+                    class="sv-btn primary"
+                    href="notes.html?chapter_id=${id}"
+                  >
+                    Notes
+                  </a>
+
+                  <a
+                    class="sv-btn"
+                    href="solutions.html?chapter_id=${id}"
+                  >
+                    Solutions
+                  </a>
+
+                  <a
+                    class="sv-btn"
+                    href="exercises.html?chapter_id=${id}"
+                  >
+                    Exercises
+                  </a>
+
+                </div>
+
+              </article>
+
+            `;
+
+          }).join("")
+
+        }
+
+      </div>
+
     `;
+
   }
-}
 
 
-/* =========================================================
-   PROGRESS
-   ========================================================= */
+  /* -------------------------------------------------------
+     Search page
+     ------------------------------------------------------- */
 
-async function svLoadProgress() {
+  async function loadSearch() {
 
-  const u =
-    await requireAuth(
-      "index.html"
+    const root =
+      document.getElementById(
+        "svApp"
+      );
+
+    if (!root) return;
+
+
+    const loaded =
+      await init();
+
+    if (!loaded) return;
+
+
+    root.innerHTML = `
+
+      <div class="sv-kicker">
+        STUDYVERSE 9 · SEARCH
+      </div>
+
+      <h1 class="sv-title">
+        Search everything.
+      </h1>
+
+      <p class="sv-sub">
+        Start typing and matching chapters
+        and resources will appear.
+      </p>
+
+
+      <input
+        id="svGlobalSearch"
+        class="sv-search"
+        autofocus
+        placeholder="Search chapters, notes, exercises..."
+      >
+
+
+      <div
+        id="svSearchResults"
+        class="sv-list"
+      >
+
+        <div class="sv-empty">
+          Start typing to search.
+        </div>
+
+      </div>
+
+    `;
+
+
+    const input =
+      document.getElementById(
+        "svGlobalSearch"
+      );
+
+
+    input.addEventListener(
+      "input",
+      function () {
+
+        const q =
+          norm(input.value);
+
+
+        if (!q) {
+
+          document
+            .getElementById(
+              "svSearchResults"
+            )
+            .innerHTML = `
+              <div class="sv-empty">
+                Start typing to search.
+              </div>
+            `;
+
+          return;
+        }
+
+
+        const chapterResults =
+          SV.chapters.filter(
+            function (c) {
+
+              return [
+
+                chapterTitle(c),
+                c.book_name,
+                c.book,
+                c.part_name,
+                c.part
+
+              ].some(function (value) {
+
+                return norm(value)
+                  .includes(q);
+
+              });
+
+            }
+          );
+
+
+        const resourceResults =
+          SV.resources.filter(
+            function (r) {
+
+              return [
+
+                resourceTitle(r),
+                resourceType(r),
+                r.description
+
+              ].some(function (value) {
+
+                return norm(value)
+                  .includes(q);
+
+              });
+
+            }
+          );
+
+
+        const html = `
+
+          ${
+            chapterResults
+              .map(function (c) {
+
+                return `
+
+                  <div class="sv-row">
+
+                    <div class="sv-row-left">
+
+                      <div class="sv-icon">
+                        ∑
+                      </div>
+
+                      <div>
+
+                        <div class="sv-row-title">
+                          ${esc(
+                            chapterTitle(c)
+                          )}
+                        </div>
+
+                        <small>
+                          Chapter
+                        </small>
+
+                      </div>
+
+                    </div>
+
+                    <a
+                      class="sv-btn primary"
+                      href="notes.html?chapter_id=${encodeURIComponent(c.id)}"
+                    >
+                      Open
+                    </a>
+
+                  </div>
+
+                `;
+
+              })
+              .join("")
+
+          }
+
+
+          ${
+            resourceResults
+              .map(resourceCard)
+              .join("")
+          }
+
+
+          ${
+            !chapterResults.length &&
+            !resourceResults.length
+              ? `
+                <div class="sv-empty">
+                  No matching content found.
+                </div>
+              `
+              : ""
+          }
+
+        `;
+
+
+        document
+          .getElementById(
+            "svSearchResults"
+          )
+          .innerHTML = html;
+
+      }
     );
 
-  if (!u) return;
+  }
 
-  const root =
-    document.getElementById(
-      "svApp"
-    );
 
-  try {
+  /* -------------------------------------------------------
+     Bookmarks
+     ------------------------------------------------------- */
 
-    const {
-      data,
-      error
-    } =
+  async function loadBookmarks() {
+
+    const root =
+      document.getElementById(
+        "svApp"
+      );
+
+    if (!root) return;
+
+
+    const user =
+      await currentUser();
+
+
+    if (!user) {
+
+      location.href =
+        "index.html";
+
+      return;
+    }
+
+
+    root.innerHTML = `
+
+      <div class="sv-kicker">
+        STUDYVERSE 9
+      </div>
+
+      <h1 class="sv-title">
+        Bookmarks
+      </h1>
+
+      <p class="sv-sub">
+        Your saved resources.
+      </p>
+
+      <div class="sv-empty">
+        Bookmark display will connect to your
+        saved resources here.
+      </div>
+
+    `;
+
+  }
+
+
+  /* -------------------------------------------------------
+     Progress
+     ------------------------------------------------------- */
+
+  async function loadProgress() {
+
+    const root =
+      document.getElementById(
+        "svApp"
+      );
+
+    if (!root) return;
+
+
+    const loaded =
+      await init();
+
+    if (!loaded) return;
+
+
+    const user =
+      await currentUser();
+
+
+    const result =
       await sb
         .from("chapter_progress")
         .select("*")
         .eq(
           "user_id",
-          u.id
+          user.id
         );
 
-    if (error)
-      throw error;
 
-    const done =
+    if (result.error) {
+
+      console.error(
+        result.error
+      );
+
+      root.innerHTML = `
+        <div class="sv-empty sv-danger">
+          Could not load progress.
+        </div>
+      `;
+
+      return;
+    }
+
+
+    const completed =
       new Set(
-        (data || [])
+        (result.data || [])
           .filter(
             x => x.completed
           )
@@ -1368,149 +1294,156 @@ async function svLoadProgress() {
           )
       );
 
+
     root.innerHTML = `
 
       <div class="sv-kicker">
-        StudyVerse 9 · Progress
+        STUDYVERSE 9 · PROGRESS
       </div>
 
       <h1 class="sv-title">
-        Your progress.
+        Your Progress
       </h1>
-
-      <p class="sv-sub">
-        Chapter completion is saved to your account.
-      </p>
 
       <div class="sv-grid">
 
         ${
-          SV.chapters
-            .map(c => `
+          SV.chapters.map(function (c) {
+
+            const done =
+              completed.has(
+                String(c.id)
+              );
+
+            return `
 
               <article class="sv-card">
 
                 <div class="sv-meta">
-
                   ${
-                    done.has(
-                      String(c.id)
-                    )
-                      ? "Completed"
-                      : "In progress"
+                    done
+                      ? "✓ COMPLETED"
+                      : "IN PROGRESS"
                   }
-
                 </div>
 
                 <h3>
-                  ${svEsc(
-                    svChapterTitle(c)
+                  ${esc(
+                    chapterTitle(c)
                   )}
                 </h3>
 
-                <p>
-
-                  ${
-                    done.has(
-                      String(c.id)
-                    )
-                      ? "✓ Chapter marked complete."
-                      : "Keep learning and mark it complete when you finish."
-                  }
-
-                </p>
-
               </article>
 
-            `)
-            .join("")
+            `;
+
+          }).join("")
+
         }
 
       </div>
 
     `;
 
-  } catch (e) {
-
-    console.error(e);
-
-    root.innerHTML = `
-      <div class="sv-empty sv-danger">
-        Could not load progress.
-      </div>
-    `;
   }
-}
 
 
-/* =========================================================
-   START THE CORRECT PAGE
-   ========================================================= */
+  /* -------------------------------------------------------
+     Boot
+     ------------------------------------------------------- */
 
-async function svBoot() {
+  async function boot() {
 
-  const path =
-    location.pathname
-      .split("/")
-      .pop()
-      .toLowerCase();
+    const root =
+      document.getElementById(
+        "svApp"
+      );
 
-  const root =
-    document.getElementById(
-      "svApp"
+    if (!root) return;
+
+
+    const path =
+      pageName();
+
+
+    try {
+
+      if (path === "library") {
+
+        await loadLibrary();
+
+      } else if (path === "search") {
+
+        await loadSearch();
+
+      } else if (path === "bookmarks") {
+
+        await loadBookmarks();
+
+      } else if (path === "progress") {
+
+        await loadProgress();
+
+      } else {
+
+        await loadLearningPage();
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "StudyVerse boot error:",
+        error
+      );
+
+
+      root.innerHTML = `
+
+        <div class="sv-empty sv-danger">
+
+          <h3>
+            Something went wrong.
+          </h3>
+
+          <p>
+            Please refresh the page.
+          </p>
+
+          <button
+            class="sv-btn primary"
+            onclick="location.reload()"
+          >
+            Refresh
+          </button>
+
+        </div>
+
+      `;
+
+    }
+
+  }
+
+
+  /* -------------------------------------------------------
+     Start after page is ready
+     ------------------------------------------------------- */
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      boot
     );
 
-  if (!root) return;
+  } else {
 
-  const map = {
+    boot();
 
-    "library.html":
-      svLoadLibrary,
+  }
 
-    "search.html":
-      svLoadSearch,
-
-    "bookmarks.html":
-      svLoadBookmarks,
-
-    "progress.html":
-      async () => {
-        await svInit();
-        await svLoadProgress();
-      },
-
-    "notes.html":
-      svLoadMode,
-
-    "solutions.html":
-      svLoadMode,
-
-    "exercises.html":
-      svLoadMode,
-
-    "important.html":
-      svLoadMode,
-
-    "videos.html":
-      svLoadMode,
-
-    "practice.html":
-      svLoadMode,
-
-    "pdfs.html":
-      svLoadMode
-
-  };
-
-  const fn =
-    map[path];
-
-  if (fn)
-    await fn();
-}
-
-
-window.addEventListener(
-  "DOMContentLoaded",
-  svBoot
-);
+})();
