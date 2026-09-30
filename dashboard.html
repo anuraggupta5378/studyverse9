@@ -1158,19 +1158,1040 @@
       </header>
 
 
-      <!-- =================================================
-           HERO
-           ================================================= -->
+     <!-- =================================================
+     HERO
+     ================================================= -->
 
-      <section class="hero">
+<section class="hero">
 
-        <div class="hero-content">
+  <div class="hero-content">
 
-          <div class="hero-label">
-            ✦ StudyVerse 9 · Mathematics
-          </div>
+    <div class="hero-label">
+      ✦ STUDYVERSE 9 · MATHEMATICS
+    </div>
+
+    <h2>
+      Learn your way.<br>
+      Explore beyond the textbook.
+    </h2>
+
+    <p>
+      Notes, solutions, exercises, important questions,
+      videos, books and practice — organised into one
+      learning space.
+    </p>
+
+    <button
+      class="hero-button"
+      onclick="location.href='chapters.html'"
+    >
+      Explore Mathematics
+      →
+    </button>
+
+  </div>
+
+  <div class="hero-symbols">
+    ∑ π √ x² ∞
+  </div>
+
+</section>
 
 
-          <h2>
-            Learn your way.<br>
-            Expl
+<!-- =================================================
+     LEARNING HUB
+     ================================================= -->
+
+<section class="section" id="tools">
+
+  <div class="section-heading">
+
+    <div>
+      <h2>Learning Hub</h2>
+
+      <p>
+        Everything you need, organised by purpose.
+      </p>
+    </div>
+
+  </div>
+
+
+  <div class="tool-grid">
+
+    <!-- NOTES -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(107,85,233,.11);
+        --tool-glow:rgba(107,85,233,.08);
+      "
+      onclick="openTool('notes')"
+    >
+
+      <div class="tool-icon">
+        📖
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Notes
+        </div>
+
+        <div class="tool-description">
+          Original chapter and topic explanations.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- SOLUTIONS -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(55,143,244,.11);
+        --tool-glow:rgba(55,143,244,.08);
+      "
+      onclick="openTool('solutions')"
+    >
+
+      <div class="tool-icon">
+        ✍️
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Solutions
+        </div>
+
+        <div class="tool-description">
+          Step-by-step solutions to exercises and questions.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- EXERCISES -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(35,185,157,.11);
+        --tool-glow:rgba(35,185,157,.08);
+      "
+      onclick="openTool('exercises')"
+    >
+
+      <div class="tool-icon">
+        🧩
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Exercises
+        </div>
+
+        <div class="tool-description">
+          Find exercises by book, part and chapter.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- IMPORTANT QUESTIONS -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(241,177,51,.12);
+        --tool-glow:rgba(241,177,51,.08);
+      "
+      onclick="openTool('important')"
+    >
+
+      <div class="tool-icon">
+        ⭐
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Important Questions
+        </div>
+
+        <div class="tool-description">
+          Key questions selected for revision and practice.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- VIDEOS -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(239,92,121,.11);
+        --tool-glow:rgba(239,92,121,.08);
+      "
+      onclick="openTool('videos')"
+    >
+
+      <div class="tool-icon">
+        ▶️
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Videos
+        </div>
+
+        <div class="tool-description">
+          Learning videos organised by chapter and topic.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- BOOKS -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(139,91,221,.11);
+        --tool-glow:rgba(139,91,221,.08);
+      "
+      onclick="location.hash='books'"
+    >
+
+      <div class="tool-icon">
+        📚
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Books
+        </div>
+
+        <div class="tool-description">
+          Browse available books and their parts.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- PRACTICE -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(39,180,216,.11);
+        --tool-glow:rgba(39,180,216,.08);
+      "
+      onclick="openTool('practice')"
+    >
+
+      <div class="tool-icon">
+        🧠
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          Practice
+        </div>
+
+        <div class="tool-description">
+          Test your understanding with practice questions.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+
+    <!-- PDF LIBRARY -->
+
+    <article
+      class="tool-card"
+      style="
+        --tool-bg:rgba(106,106,120,.10);
+        --tool-glow:rgba(106,106,120,.07);
+      "
+      onclick="openTool('pdf')"
+    >
+
+      <div class="tool-icon">
+        📄
+      </div>
+
+      <div>
+
+        <div class="tool-name">
+          PDF Library
+        </div>
+
+        <div class="tool-description">
+          Worksheets, papers and downloadable resources.
+        </div>
+
+      </div>
+
+      <span class="tool-arrow">
+        →
+      </span>
+
+    </article>
+
+  </div>
+
+</section>
+
+
+<!-- =================================================
+     BOOK LIBRARY
+     ================================================= -->
+
+<section class="section" id="books">
+
+  <div class="section-heading">
+
+    <div>
+
+      <h2>
+        Your Books
+      </h2>
+
+      <p>
+        Choose a book and continue into its structure.
+      </p>
+
+    </div>
+
+    <a
+      href="chapters.html"
+      class="view-all"
+    >
+      Browse →
+    </a>
+
+  </div>
+
+
+  <div class="library-grid">
+
+
+    <!-- GANITA MANJARI PART 1 -->
+
+    <article
+      class="library-card"
+      onclick="location.href='chapters.html'"
+    >
+
+      <div class="book-icon">
+        ∑
+      </div>
+
+      <div class="library-info">
+
+        <small>
+          Mathematics
+        </small>
+
+        <h3>
+          Ganita Manjari
+        </h3>
+
+        <p>
+          Part 1 · 8 chapters available
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- GANITA MANJARI PART 2 -->
+
+    <article
+      class="library-card"
+      style="opacity:.72"
+    >
+
+      <div
+        class="book-icon"
+        style="
+          background:
+            linear-gradient(
+              145deg,
+              #9696a6,
+              #68697a
+            );
+        "
+      >
+        ∞
+      </div>
+
+      <div class="library-info">
+
+        <small>
+          Mathematics
+        </small>
+
+        <h3>
+          Ganita Manjari
+        </h3>
+
+        <p>
+          Part 2
+        </p>
+
+        <span class="coming">
+          Coming Soon
+        </span>
+
+      </div>
+
+    </article>
+
+
+  </div>
+
+</section>
+
+
+<!-- =================================================
+     PROGRESS
+     ================================================= -->
+
+<section
+  class="section"
+  id="progress"
+>
+
+  <div class="section-heading">
+
+    <div>
+
+      <h2>
+        Your Progress
+      </h2>
+
+      <p>
+        Keep track of your learning journey.
+      </p>
+
+    </div>
+
+    <span
+      class="view-all"
+      id="overallProgress"
+    >
+      0%
+    </span>
+
+  </div>
+
+
+  <div class="panel">
+
+    <div
+      id="progressContent"
+      class="empty-state"
+    >
+
+      <div class="empty-state-icon">
+        ◔
+      </div>
+
+      Your chapter progress will appear here.
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =================================================
+     LOWER PANELS
+     ================================================= -->
+
+<section class="section lower-grid">
+
+
+  <!-- RECENT ACTIVITY -->
+
+  <div
+    class="panel"
+    id="bookmarks"
+  >
+
+    <h3 class="panel-title">
+      Recent Activity
+    </h3>
+
+    <p class="panel-subtitle">
+      Your latest learning activity.
+    </p>
+
+    <div class="empty-state">
+
+      <div class="empty-state-icon">
+        ◌
+      </div>
+
+      Start learning and your activity
+      will appear here.
+
+    </div>
+
+  </div>
+
+
+  <!-- ANNOUNCEMENTS -->
+
+  <div
+    class="panel"
+    id="pdf-library"
+  >
+
+    <h3 class="panel-title">
+      What's New
+    </h3>
+
+    <p class="panel-subtitle">
+      Updates from StudyVerse.
+    </p>
+
+    <div class="empty-state">
+
+      <div class="empty-state-icon">
+        ✦
+      </div>
+
+      No new announcements.
+
+    </div>
+
+  </div>
+
+
+</section>
+
+
+</main>
+
+</div>
+
+
+<!-- =====================================================
+     DASHBOARD JAVASCRIPT
+     ===================================================== -->
+
+<script>
+
+let dashboardUser = null;
+let dashboardProfile = null;
+let dashboardChapters = [];
+
+
+function initials(name) {
+
+  if (!name) return "S";
+
+  const parts =
+    name.trim().split(/\s+/);
+
+  if (parts.length === 1) {
+
+    return parts[0]
+      .slice(0, 1)
+      .toUpperCase();
+
+  }
+
+  return (
+    parts[0].slice(0, 1) +
+    parts[parts.length - 1].slice(0, 1)
+  ).toUpperCase();
+
+}
+
+
+async function handleLogout() {
+
+  try {
+
+    await sb.auth.signOut();
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+  location.href = "index.html";
+
+}
+
+
+function openSearch() {
+
+  const search =
+    prompt(
+      "What are you looking for?\n\nTry: notes, solutions, exercises, probability..."
+    );
+
+  if (!search) return;
+
+  const query =
+    search.toLowerCase();
+
+
+  if (query.includes("note")) {
+
+    openTool("notes");
+    return;
+
+  }
+
+
+  if (
+    query.includes("solution") ||
+    query.includes("answer")
+  ) {
+
+    openTool("solutions");
+    return;
+
+  }
+
+
+  if (query.includes("exercise")) {
+
+    openTool("exercises");
+    return;
+
+  }
+
+
+  if (
+    query.includes("important") ||
+    query.includes("question")
+  ) {
+
+    openTool("important");
+    return;
+
+  }
+
+
+  if (query.includes("video")) {
+
+    openTool("videos");
+    return;
+
+  }
+
+
+  if (query.includes("practice")) {
+
+    openTool("practice");
+    return;
+
+  }
+
+
+  if (
+    query.includes("book") ||
+    query.includes("mathematics") ||
+    query.includes("math")
+  ) {
+
+    location.href =
+      "chapters.html";
+
+    return;
+
+  }
+
+
+  location.href =
+    "chapters.html";
+
+}
+
+
+/*
+  TEMPORARY TOOL ROUTING
+
+  These routes will later point to dedicated
+  Notes / Solutions / Exercises pages.
+*/
+
+function openTool(type) {
+
+  const routes = {
+
+    notes:
+      "chapters.html?mode=notes",
+
+    solutions:
+      "chapters.html?mode=solutions",
+
+    exercises:
+      "chapters.html?mode=exercises",
+
+    important:
+      "chapters.html?mode=important",
+
+    videos:
+      "chapters.html?mode=videos",
+
+    practice:
+      "chapters.html?mode=practice",
+
+    pdf:
+      "chapters.html?mode=pdf"
+
+  };
+
+
+  if (routes[type]) {
+
+    location.href =
+      routes[type];
+
+  }
+
+}
+
+
+async function loadDashboard() {
+
+  try {
+
+    dashboardUser =
+      await requireAuth();
+
+    if (!dashboardUser) return;
+
+
+    dashboardProfile =
+      await profileOf(
+        dashboardUser.id
+      );
+
+
+    setUserUI(
+      dashboardProfile
+    );
+
+
+    const avatar =
+      document.querySelector(
+        "[data-user-initial]"
+      );
+
+
+    if (avatar) {
+
+      avatar.textContent =
+        initials(
+          dashboardProfile?.full_name ||
+          dashboardUser.email
+        );
+
+    }
+
+
+    /*
+      LOAD CHAPTERS
+    */
+
+    dashboardChapters =
+      await fetchChapters();
+
+
+    /*
+      LOAD CHAPTER PROGRESS
+    */
+
+    const {
+      data: progressRows,
+      error: progressError
+    } =
+      await sb
+        .from("chapter_progress")
+        .select("*")
+        .eq(
+          "user_id",
+          dashboardUser.id
+        );
+
+
+    if (progressError) {
+
+      console.warn(
+        "Progress unavailable:",
+        progressError
+      );
+
+    }
+
+
+    const progress =
+      progressRows || [];
+
+
+    const total =
+      dashboardChapters.length;
+
+
+    const completed =
+      progress.filter(
+        item =>
+          item.completed === true
+      ).length;
+
+
+    const percentage =
+      total
+        ? Math.round(
+            completed /
+            total *
+            100
+          )
+        : 0;
+
+
+    document
+      .getElementById(
+        "overallProgress"
+      )
+      .textContent =
+      percentage + "%";
+
+
+    /*
+      PROGRESS PANEL
+    */
+
+    const progressContent =
+      document.getElementById(
+        "progressContent"
+      );
+
+
+    if (
+      progressContent &&
+      dashboardChapters.length
+    ) {
+
+      progressContent.innerHTML =
+        dashboardChapters
+          .map((chapter, index) => {
+
+            const row =
+              progress.find(
+                item =>
+                  item.chapter_id ===
+                  chapter.id
+              );
+
+
+            const done =
+              row?.completed === true;
+
+
+            return `
+
+              <div
+                style="
+                  display:flex;
+                  align-items:center;
+                  gap:12px;
+                  padding:10px 0;
+                  border-bottom:
+                    1px solid
+                    rgba(80,80,130,.07);
+                "
+              >
+
+                <div
+                  style="
+                    width:30px;
+                    height:30px;
+                    display:grid;
+                    place-items:center;
+                    border-radius:9px;
+                    background:
+                      ${
+                        done
+                          ? "rgba(43,190,148,.12)"
+                          : "rgba(107,85,233,.09)"
+                      };
+                    color:
+                      ${
+                        done
+                          ? "#249b7b"
+                          : "#6450dc"
+                      };
+                    font-size:10px;
+                    font-weight:850;
+                  "
+                >
+                  ${
+                    done
+                      ? "✓"
+                      : index + 1
+                  }
+                </div>
+
+
+                <div
+                  style="
+                    flex:1;
+                    min-width:0;
+                  "
+                >
+
+                  <div
+                    style="
+                      font-size:10px;
+                      font-weight:750;
+                      white-space:nowrap;
+                      overflow:hidden;
+                      text-overflow:ellipsis;
+                    "
+                  >
+                    ${esc(chapter.name)}
+                  </div>
+
+
+                  <div
+                    style="
+                      margin-top:5px;
+                      height:4px;
+                      border-radius:99px;
+                      background:#ececf5;
+                      overflow:hidden;
+                    "
+                  >
+
+                    <div
+                      style="
+                        width:
+                          ${
+                            done
+                              ? "100%"
+                              : "0%"
+                          };
+                        height:100%;
+                        border-radius:inherit;
+                        background:
+                          linear-gradient(
+                            90deg,
+                            #6b55e9,
+                            #398df4
+                          );
+                      "
+                    ></div>
+
+                  </div>
+
+                </div>
+
+
+                <div
+                  style="
+                    color:#999cad;
+                    font-size:9px;
+                  "
+                >
+                  ${
+                    done
+                      ? "Complete"
+                      : "Start"
+                  }
+                </div>
+
+              </div>
+
+            `;
+
+          })
+          .join("");
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Dashboard error:",
+      error
+    );
+
+  }
+
+}
+
+
+loadDashboard();
+
+</script>
+
+
+<script src="three-bg.js"></script>
+
+</body>
+  </html>
