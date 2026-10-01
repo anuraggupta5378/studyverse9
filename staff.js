@@ -1,821 +1,373 @@
-/* StudyVerse 9 — Staff Workspace */
-
-let staffCtx = null;
 let staffResources = [];
 let staffReviews = [];
-let staffAccess = null;
 
-/* -----------------------------
-   Small helpers
------------------------------ */
+(async function () {
 
-function staffEsc(value = "") {
-  return String(value).replace(/[&<>"']/g, m => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[m]));
-}
-
-function staffToast(message, type = "ok") {
-  if (typeof toast === "function") {
-    toast(message, type);
-  }
-}
-
-function formatDate(value) {
-  if (!value) return "—";
-
-  try {
-    return new Date(value).toLocaleString("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
-  } catch {
-    return value;
-  }
-}
-
-function resourceLabel(resource) {
-  return (
-    resource.title ||
-    resource.name ||
-    "Untitled resource"
-  );
-}
-
-function resourceKind(resource) {
-  return (
-    resource.resource_type ||
-    resource.type ||
-    "resource"
-  );
-}
-
-/* -----------------------------
-   Page navigation
------------------------------ */
-
-function openStudentView() {
-  location.href = "dashboard.html";
-}
-
-function openResourceCreator() {
-  showResourceModal();
-}
-
-/* -----------------------------
-   Initialisation
------------------------------ */
-
-async function initStaff() {
-  try {
-    staffCtx = await requireRole(["staff", "admin"]);
-
-    if (!staffCtx) return;
-
-    document.getElementById("staffName").textContent =
-      staffCtx.profile?.full_name || "Staff Member";
-
-    /*
-      Admins can inspect the staff workspace too.
-      Normal staff users won't see this link.
-    */
-    if (staffCtx.profile?.role === "admin") {
-      const adminLink = document.getElementById("adminLink");
-
-      if (adminLink) {
-        adminLink.style.display = "";
-      }
-    }
-
-    await Promise.all([
-      loadStaffAccess(),
-      loadStaffResources(),
-      loadStaffReviews()
+  const access =
+    await requireRole([
+      "staff",
+      "admin"
     ]);
 
-    renderAllStaff();
-  } catch (error) {
-    console.error("Staff workspace error:", error);
+  if (!access) return;
 
-    staffToast(
-      error?.message || "Unable to load staff workspace.",
-      "error"
+  await loadStaff();
+
+})();
+
+async function loadStaff() {
+
+  try {
+
+    const user =
+      await currentUser();
+
+    const [
+      resourceResult,
+      reviewResult
+    ] = await Promise.all([
+
+      sb
+        .from("resources")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", {
+          ascending: false
+        }),
+
+      sb
+        .from("resource_change_requests")
+        .select("*")
+        .eq("submitted_by", user.id)
+        .order("created_at", {
+          ascending: false
+        })
+    ]);
+
+    if (resourceResult.error)
+      throw resourceResult.error;
+
+    if (reviewResult.error)
+      throw reviewResult.error;
+
+    staffResources =
+      resourceResult.data || [];
+
+    staffReviews =
+      reviewResult.data || [];
+
+    renderStaff();
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast(
+      error.message ||
+      "Staff workspace failed."
     );
   }
 }
 
-/* -----------------------------
-   Staff permissions
------------------------------ */
+function renderStaff() {
 
-async function loadStaffAccess() {
-  const { data, error } = await sb
-    .from("staff_access")
-    .select("*")
-    .eq("user_id", staffCtx.user.id)
-    .maybeSingle();
+  const pending =
+    staffReviews.filter(
+      item => item.status === "pending"
+    ).length;
 
-  if (error) throw error;
+  const approved =
+    staffReviews.filter(
+      item => item.status === "approved"
+    ).length;
 
-  staffAccess = data || {
-    can_manage_content: false,
-    can_publish: false,
-    can_manage_students: false,
-    can_manage_announcements: false
-  };
-}
+  const rejected =
+    staffReviews.filter(
+      item => item.status === "rejected"
+    ).length;
 
-/* -----------------------------
-   Staff resources
------------------------------ */
+  document.getElementById(
+    "staffMetrics"
+  ).innerHTML = [
 
-async function loadStaffResources() {
-  const { data, error } = await sb
-    .from("resources")
-    .select("*")
-    .eq("created_by", staffCtx.user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  staffResources = data || [];
-}
-
-/* -----------------------------
-   Review requests
------------------------------ */
-
-async function loadStaffReviews() {
-  const { data, error } = await sb
-    .from("resource_change_requests")
-    .select("*")
-    .eq("submitted_by", staffCtx.user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  staffReviews = data || [];
-}
-
-/* -----------------------------
-   Render everything
------------------------------ */
-
-function renderAllStaff() {
-  renderStats();
-  renderResources();
-  renderReviews();
-  renderPermissions();
-}
-
-/* -----------------------------
-   Statistics
------------------------------ */
-
-function renderStats() {
-  const total = staffResources.length;
-
-  const pending = staffReviews.filter(
-    r => r.status === "pending"
-  ).length;
-
-  const approved = staffReviews.filter(
-    r => r.status === "approved"
-  ).length;
-
-  const rejected = staffReviews.filter(
-    r => r.status === "rejected"
-  ).length;
-
-  document.getElementById("myResourceCount").textContent = total;
-  document.getElementById("pendingCount").textContent = pending;
-  document.getElementById("approvedCount").textContent = approved;
-  document.getElementById("rejectedCount").textContent = rejected;
-}
-
-/* -----------------------------
-   Resource table
------------------------------ */
-
-function renderResources() {
-  const box = document.getElementById("resourceWorkspace");
-
-  if (!box) return;
-
-  if (!staffResources.length) {
-    box.innerHTML = `
-      <div class="empty-state">
-        <strong>No resources yet.</strong>
-        <br>
-        Add your first learning resource to begin.
-      </div>
-    `;
-    return;
-  }
-
-  box.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Resource</th>
-          <th>Type</th>
-          <th>Published</th>
-          <th>Created</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        ${staffResources.map(resource => {
-
-          const published = !!resource.is_published;
-
-          return `
-            <tr>
-
-              <td>
-                <strong>
-                  ${staffEsc(resourceLabel(resource))}
-                </strong>
-              </td>
-
-              <td>
-                ${staffEsc(resourceKind(resource))}
-              </td>
-
-              <td>
-                <span class="status ${published ? "approved" : "pending"}">
-                  ${published ? "Published" : "Draft"}
-                </span>
-              </td>
-
-              <td>
-                ${staffEsc(formatDate(resource.created_at))}
-              </td>
-
-              <td>
-
-                ${
-                  published
-                    ? `
-                      <button
-                        class="btn small"
-                        onclick="requestResourceUpdate('${resource.id}')"
-                      >
-                        Request change
-                      </button>
-                    `
-                    : `
-                      <button
-                        class="btn small"
-                        onclick="editStaffResource('${resource.id}')"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        class="btn small"
-                        onclick="submitResourceForReview('${resource.id}')"
-                      >
-                        Submit
-                      </button>
-                    `
-                }
-
-              </td>
-
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    </table>
-  `;
-}
-
-/* -----------------------------
-   Review table
------------------------------ */
-
-function renderReviews() {
-  const box = document.getElementById("reviewWorkspace");
-
-  if (!box) return;
-
-  if (!staffReviews.length) {
-    box.innerHTML = `
-      <div class="empty-state">
-        No review requests yet.
-      </div>
-    `;
-    return;
-  }
-
-  box.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Action</th>
-          <th>Resource</th>
-          <th>Status</th>
-          <th>Submitted</th>
-          <th>Review note</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        ${staffReviews.map(review => {
-
-          const resource =
-            staffResources.find(
-              r => r.id === review.resource_id
-            );
-
-          const title =
-            review.title ||
-            resource?.title ||
-            "Resource";
-
-          const status =
-            review.status || "pending";
-
-          return `
-            <tr>
-
-              <td>
-                ${staffEsc(review.action || "update")}
-              </td>
-
-              <td>
-                <strong>
-                  ${staffEsc(title)}
-                </strong>
-              </td>
-
-              <td>
-                <span class="status ${staffEsc(status)}">
-                  ${staffEsc(status)}
-                </span>
-              </td>
-
-              <td>
-                ${staffEsc(formatDate(review.created_at))}
-              </td>
-
-              <td>
-                ${staffEsc(review.review_note || "—")}
-              </td>
-
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    </table>
-  `;
-}
-
-/* -----------------------------
-   Permissions
------------------------------ */
-
-function renderPermissions() {
-  const box = document.getElementById("permissionWorkspace");
-
-  if (!box) return;
-
-  const permissions = [
     [
-      "Manage content",
-      staffAccess?.can_manage_content
+      "My resources",
+      staffResources.length,
+      "Created by you"
     ],
+
     [
-      "Publish",
-      staffAccess?.can_publish
+      "Pending",
+      pending,
+      "Awaiting manager"
     ],
+
     [
-      "Manage students",
-      staffAccess?.can_manage_students
+      "Approved",
+      approved,
+      "Accepted work"
     ],
+
     [
-      "Announcements",
-      staffAccess?.can_manage_announcements
+      "Rejected",
+      rejected,
+      "Needs revision"
     ]
-  ];
 
-  box.innerHTML = permissions.map(([name, enabled]) => `
-    <div class="permission">
+  ].map(item => `
+    <div class="card">
 
-      <strong>
-        ${enabled ? "✓" : "—"}
-        ${staffEsc(name)}
-      </strong>
+      <div class="metric-label">
+        ${item[0]}
+      </div>
 
-      <span>
-        ${enabled ? "Permission enabled" : "Permission not granted"}
-      </span>
+      <div class="metric-value">
+        ${item[1]}
+      </div>
+
+      <div class="metric-note">
+        ${item[2]}
+      </div>
 
     </div>
   `).join("");
+
+  document.getElementById(
+    "staffResources"
+  ).innerHTML =
+    staffResources.length
+      ? staffResources.map(item => `
+          <div class="row">
+
+            <div>
+              <div class="rowtitle">
+                ${esc(item.title)}
+              </div>
+
+              <div class="rowsub">
+                ${esc(item.resource_type)}
+              </div>
+            </div>
+
+            <div class="actions">
+
+              ${
+                item.is_published
+                  ? `
+                    <span class="badge good">
+                      Published
+                    </span>
+                  `
+                  : `
+                    <button
+                      class="btn small"
+                      onclick="submitDraft('${item.id}')"
+                    >
+                      Submit for review
+                    </button>
+                  `
+              }
+
+            </div>
+
+          </div>
+        `).join("")
+      : `<div class="empty">
+          No resources yet.
+        </div>`;
+
+  document.getElementById(
+    "staffReviews"
+  ).innerHTML =
+    staffReviews.length
+      ? staffReviews.map(item => `
+          <div class="row">
+
+            <div>
+              <div class="rowtitle">
+                ${esc(
+                  item.title ||
+                  "Untitled"
+                )}
+              </div>
+
+              <div class="rowsub">
+                ${esc(item.action)}
+                ·
+                ${new Date(
+                  item.created_at
+                ).toLocaleDateString()}
+
+                ${
+                  item.review_note
+                    ? ` · ${esc(
+                        item.review_note
+                      )}`
+                    : ""
+                }
+              </div>
+            </div>
+
+            <span class="badge ${
+              item.status === "approved"
+                ? "good"
+                : item.status === "rejected"
+                  ? "bad"
+                  : "warn"
+            }">
+              ${esc(item.status)}
+            </span>
+
+          </div>
+        `).join("")
+      : `<div class="empty">
+          No submissions yet.
+        </div>`;
 }
 
-/* -----------------------------
-   Resource modal
------------------------------ */
+function openStaffResource() {
 
-function showResourceModal(resource = null) {
-  const modal = document.getElementById("resourceModal");
-  const body = document.getElementById("resourceModalBody");
+  document.getElementById(
+    "staffModal"
+  ).classList.add("show");
 
-  if (!modal || !body) return;
-
-  const editing = !!resource;
-
-  body.innerHTML = `
-    <div class="actions" style="justify-content:space-between">
-      <h2>
-        ${editing ? "Edit Resource" : "Add Resource"}
-      </h2>
-
-      <button
-        class="btn small"
-        onclick="closeResourceModal()"
-      >
-        Close
-      </button>
-    </div>
-
-    <form
-      id="staffResourceForm"
-      style="margin-top:18px"
-    >
-
-      <label>
-        Title
-        <input
-          id="staffResourceTitle"
-          required
-          value="${staffEsc(resource?.title || "")}"
-          placeholder="Resource title"
-        >
-      </label>
-
-      <label>
-        Resource type
-        <select id="staffResourceType">
-
-          ${[
-            "notes",
-            "solutions",
-            "exercise",
-            "important",
-            "video",
-            "practice",
-            "pdf",
-            "book",
-            "other"
-          ].map(type => `
-            <option
-              value="${type}"
-              ${resource?.resource_type === type ? "selected" : ""}
-            >
-              ${type}
-            </option>
-          `).join("")}
-
-        </select>
-      </label>
-
-      <label>
-        Chapter ID
-        <input
-          id="staffResourceChapter"
-          required
-          value="${staffEsc(resource?.chapter_id || "")}"
-          placeholder="Chapter UUID"
-        >
-      </label>
-
-      <label>
-        Description
-        <textarea
-          id="staffResourceDescription"
-          rows="4"
-          placeholder="Short description"
-        >${staffEsc(resource?.description || "")}</textarea>
-      </label>
-
-      <label>
-        Content
-        <textarea
-          id="staffResourceContent"
-          rows="8"
-          placeholder="Learning content"
-        >${staffEsc(resource?.content || "")}</textarea>
-      </label>
-
-      <label>
-        External URL
-        <input
-          id="staffResourceUrl"
-          type="url"
-          value="${staffEsc(resource?.external_url || "")}"
-          placeholder="https://..."
-        >
-      </label>
-
-      <div class="actions" style="margin-top:18px">
-
-        <button
-          type="submit"
-          class="btn"
-        >
-          ${editing ? "Save Draft" : "Create Draft"}
-        </button>
-
-        <button
-          type="button"
-          class="btn secondary"
-          onclick="closeResourceModal()"
-        >
-          Cancel
-        </button>
-
-      </div>
-
-    </form>
-  `;
-
-  modal.style.display = "flex";
-
-  document
-    .getElementById("staffResourceForm")
-    .addEventListener(
-      "submit",
-      event => saveStaffResource(event, resource)
-    );
+  document.getElementById("sTitle").value = "";
+  document.getElementById("sChapter").value = "";
+  document.getElementById("sDesc").value = "";
+  document.getElementById("sUrl").value = "";
 }
 
-function closeResourceModal() {
-  const modal = document.getElementById("resourceModal");
+function closeStaffModal() {
 
-  if (modal) {
-    modal.style.display = "none";
-  }
+  document.getElementById(
+    "staffModal"
+  ).classList.remove("show");
 }
 
-/* -----------------------------
-   Save draft
------------------------------ */
-
-async function saveStaffResource(event, existingResource = null) {
-  event.preventDefault();
-
-  if (!staffCtx) return;
-
-  const title =
-    document.getElementById("staffResourceTitle").value.trim();
-
-  const resourceType =
-    document.getElementById("staffResourceType").value;
-
-  const chapterId =
-    document.getElementById("staffResourceChapter").value.trim();
-
-  const description =
-    document.getElementById("staffResourceDescription").value.trim();
-
-  const content =
-    document.getElementById("staffResourceContent").value.trim();
-
-  const externalUrl =
-    document.getElementById("staffResourceUrl").value.trim();
-
-  if (!title || !chapterId) {
-    staffToast(
-      "Title and Chapter ID are required.",
-      "error"
-    );
-    return;
-  }
-
-  const payload = {
-    chapter_id: chapterId,
-    title,
-    resource_type: resourceType,
-    description: description || null,
-    content: content || null,
-    external_url: externalUrl || null,
-    is_published: false,
-    updated_by: staffCtx.user.id
-  };
+async function saveStaffDraft() {
 
   try {
 
-    if (existingResource) {
+    const user =
+      await currentUser();
 
-      const { error } = await sb
-        .from("resources")
-        .update(payload)
-        .eq("id", existingResource.id);
-
-      if (error) throw error;
-
-      staffToast("Draft updated.");
-
-    } else {
-
-      const { error } = await sb
+    const { error } =
+      await sb
         .from("resources")
         .insert({
-          ...payload,
-          created_by: staffCtx.user.id
+
+          title:
+            document.getElementById(
+              "sTitle"
+            ).value.trim(),
+
+          chapter_id:
+            document.getElementById(
+              "sChapter"
+            ).value.trim(),
+
+          resource_type:
+            document.getElementById(
+              "sType"
+            ).value,
+
+          description:
+            document.getElementById(
+              "sDesc"
+            ).value,
+
+          external_url:
+            document.getElementById(
+              "sUrl"
+            ).value.trim(),
+
+          created_by: user.id,
+          updated_by: user.id,
+          is_published: false
         });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      staffToast("Draft created.");
+    closeStaffModal();
 
-    }
+    toast("Draft saved.");
 
-    closeResourceModal();
-
-    await refreshStaff();
+    await loadStaff();
 
   } catch (error) {
 
     console.error(error);
 
-    staffToast(
-      error?.message || "Could not save resource.",
-      "error"
+    toast(
+      error.message ||
+      "Could not save draft."
     );
   }
 }
 
-/* -----------------------------
-   Edit draft
------------------------------ */
-
-function editStaffResource(resourceId) {
-  const resource = staffResources.find(
-    r => r.id === resourceId
-  );
-
-  if (!resource) {
-    staffToast("Resource not found.", "error");
-    return;
-  }
-
-  showResourceModal(resource);
-}
-
-/* -----------------------------
-   Submit draft for review
------------------------------ */
-
-async function submitResourceForReview(resourceId) {
-  const resource = staffResources.find(
-    r => r.id === resourceId
-  );
-
-  if (!resource) {
-    staffToast("Resource not found.", "error");
-    return;
-  }
-
-  if (resource.is_published) {
-    staffToast(
-      "Published resources require a change request.",
-      "error"
-    );
-    return;
-  }
+async function submitDraft(id) {
 
   try {
 
-    const { error } = await sb
-      .from("resource_change_requests")
-      .insert({
-        resource_id: resource.id,
-        submitted_by: staffCtx.user.id,
-        action: "create",
-        title: resource.title,
-        resource_type: resource.resource_type,
-        description: resource.description,
-        content: resource.content,
-        file_path: resource.file_path,
-        external_url: resource.external_url,
-        chapter_id: resource.chapter_id,
-        status: "pending"
-      });
+    const user =
+      await currentUser();
+
+    const resource =
+      staffResources.find(
+        item => item.id === id
+      );
+
+    if (!resource) return;
+
+    const { error } =
+      await sb
+        .from("resource_change_requests")
+        .insert({
+
+          resource_id: resource.id,
+
+          submitted_by: user.id,
+
+          action: "create",
+
+          title: resource.title,
+
+          resource_type:
+            resource.resource_type,
+
+          description:
+            resource.description,
+
+          content:
+            resource.content,
+
+          file_path:
+            resource.file_path,
+
+          external_url:
+            resource.external_url,
+
+          chapter_id:
+            resource.chapter_id,
+
+          status: "pending"
+        });
 
     if (error) throw error;
 
-    staffToast(
-      "Resource submitted for review."
+    toast(
+      "Draft sent for manager review."
     );
 
-    await refreshStaff();
+    await loadStaff();
 
   } catch (error) {
 
     console.error(error);
 
-    staffToast(
-      error?.message ||
-      "Could not submit resource.",
-      "error"
+    toast(
+      error.message ||
+      "Could not submit draft."
     );
   }
 }
-
-/* -----------------------------
-   Request change to published resource
------------------------------ */
-
-async function requestResourceUpdate(resourceId) {
-  const resource = staffResources.find(
-    r => r.id === resourceId
-  );
-
-  if (!resource) {
-    staffToast("Resource not found.", "error");
-    return;
-  }
-
-  try {
-
-    const { error } = await sb
-      .from("resource_change_requests")
-      .insert({
-        resource_id: resource.id,
-        submitted_by: staffCtx.user.id,
-        action: "update",
-        title: resource.title,
-        resource_type: resource.resource_type,
-        description: resource.description,
-        content: resource.content,
-        file_path: resource.file_path,
-        external_url: resource.external_url,
-        chapter_id: resource.chapter_id,
-        status: "pending"
-      });
-
-    if (error) throw error;
-
-    staffToast(
-      "Change request submitted for review."
-    );
-
-    await refreshStaff();
-
-  } catch (error) {
-
-    console.error(error);
-
-    staffToast(
-      error?.message ||
-      "Could not submit change request.",
-      "error"
-    );
-  }
-}
-
-/* -----------------------------
-   Refresh
------------------------------ */
-
-async function refreshStaff() {
-  try {
-
-    await Promise.all([
-      loadStaffAccess(),
-      loadStaffResources(),
-      loadStaffReviews()
-    ]);
-
-    renderAllStaff();
-
-  } catch (error) {
-
-    console.error(error);
-
-    staffToast(
-      error?.message ||
-      "Could not refresh staff workspace.",
-      "error"
-    );
-  }
-}
-
-/* -----------------------------
-   Start
------------------------------ */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  initStaff
-);
