@@ -1,3 +1,334 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudyVerse 9 — Staff</title><link rel="stylesheet" href="styles.css"></head><body><main class="shell"><header class="topbar"><a class="brand" href="dashboard.html"><span class="logo">S9</span> StudyVerse 9</a><nav class="nav"><a href="dashboard.html">Dashboard</a><a href="admin.html">Admin</a><a href="staff.html">Staff</a><button onclick="signOut()">Sign out</button></nav></header><section class="hero"><span class="pill">Staff access</span><h1>Content workspace</h1><p>Staff accounts can be given explicit permissions. This page shows the permissions assigned to the signed-in staff member.</p></section><section class="card" id="access"></section><section class="card" style="margin-top:18px"><h2>How staff access works</h2><p class="muted">An administrator creates the Auth account separately, then assigns the profile role and permissions here. The browser never receives an administrative secret key.</p></section></main><div id="toast" class="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script><script>
-(async()=>{const ctx=await requireRole(["staff","admin"]);if(!ctx)return;try{const {data,error}=await sb.from("staff_access").select("*").eq("user_id",ctx.user.id).maybeSingle();if(error)throw error;const a=data||{};access.innerHTML=`<h2>${esc(ctx.profile.full_name||"Staff member")}</h2><div class="grid"><div><span class="tag">Manage content</span><div class="stat">${a.can_manage_content?"Yes":"No"}</div></div><div><span class="tag">Publish</span><div class="stat">${a.can_publish?"Yes":"No"}</div></div><div><span class="tag">Manage students</span><div class="stat">${a.can_manage_students?"Yes":"No"}</div></div><div><span class="tag">Announcements</span><div class="stat">${a.can_manage_announcements?"Yes":"No"}</div></div></div>`}catch(e){toast(e.message,"error")}})();
-</script></body></html>
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>StudyVerse 9 — Staff Workspace</title>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .staff-hero {
+      margin-bottom: 22px;
+    }
+
+    .staff-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .staff-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .staff-stat {
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .staff-stat .label {
+      font-size: 13px;
+      opacity: .65;
+      margin-bottom: 8px;
+    }
+
+    .staff-stat .value {
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .staff-section {
+      margin-top: 18px;
+    }
+
+    .staff-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .staff-section-head h2 {
+      margin: 0;
+    }
+
+    .staff-table {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .staff-table table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    .staff-table th,
+    .staff-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .staff-table th {
+      font-size: 12px;
+      opacity: .65;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status.pending {
+      background: rgba(255,193,7,.12);
+      color: #ffc107;
+    }
+
+    .status.approved {
+      background: rgba(46,204,113,.12);
+      color: #2ecc71;
+    }
+
+    .status.rejected {
+      background: rgba(231,76,60,.12);
+      color: #e74c3c;
+    }
+
+    .empty-state {
+      padding: 30px 18px;
+      text-align: center;
+      opacity: .65;
+    }
+
+    .permission-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .permission {
+      padding: 15px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .permission strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .permission span {
+      font-size: 13px;
+      opacity: .65;
+    }
+
+    @media (max-width: 900px) {
+      .staff-grid,
+      .permission-list {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .staff-grid,
+      .permission-list {
+        grid-template-columns: 1fr;
+      }
+
+      .staff-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .staff-actions {
+        width: 100%;
+      }
+
+      .staff-actions .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="shell">
+
+  <header class="topbar">
+    <a class="brand" href="dashboard.html">
+      <span class="logo">S9</span>
+      StudyVerse 9
+    </a>
+
+    <nav class="nav">
+      <a href="dashboard.html">Student View</a>
+      <a href="staff.html">Staff Workspace</a>
+      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <button onclick="signOut()">Sign out</button>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+
+  <section class="hero staff-hero">
+
+    <span class="pill">Staff Workspace</span>
+
+    <h1>
+      Welcome, <span id="staffName">Staff Member</span>
+    </h1>
+
+    <p>
+      Create and manage learning resources, submit your work for review,
+      and keep track of what has been approved.
+    </p>
+
+    <div class="staff-actions">
+
+      <button class="btn" onclick="openStudentView()">
+        🎓 Student View
+      </button>
+
+      <button class="btn" onclick="openResourceCreator()">
+        + Add Resource
+      </button>
+
+      <button class="btn" onclick="refreshStaff()">
+        ↻ Refresh
+      </button>
+
+    </div>
+
+  </section>
+
+  <!-- OVERVIEW -->
+
+  <section class="card">
+
+    <div class="staff-grid">
+
+      <div class="staff-stat">
+        <div class="label">My Resources</div>
+        <div class="value" id="myResourceCount">—</div>
+      </div>
+
+      <div class="staff-stat">
+        <div class="label">Pending Review</div>
+        <div class="value" id="pendingCount">—</div>
+      </div>
+
+      <div class="staff-stat">
+        <div class="label">Approved</div>
+        <div class="value" id="approvedCount">—</div>
+      </div>
+
+      <div class="staff-stat">
+        <div class="label">Rejected</div>
+        <div class="value" id="rejectedCount">—</div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- RESOURCE WORKSPACE -->
+
+  <section class="card staff-section">
+
+    <div class="staff-section-head">
+      <div>
+        <h2>My Resource Work</h2>
+        <p class="muted">
+          Resources created or submitted by you.
+        </p>
+      </div>
+
+      <button class="btn small" onclick="openResourceCreator()">
+        + Add Resource
+      </button>
+    </div>
+
+    <div id="resourceWorkspace" class="staff-table">
+      <div class="empty-state">
+        Loading resources…
+      </div>
+    </div>
+
+  </section>
+
+  <!-- REVIEW REQUESTS -->
+
+  <section class="card staff-section">
+
+    <div class="staff-section-head">
+      <div>
+        <h2>Review Status</h2>
+        <p class="muted">
+          Track requests that require Manager/Admin approval.
+        </p>
+      </div>
+    </div>
+
+    <div id="reviewWorkspace" class="staff-table">
+      <div class="empty-state">
+        Loading review requests…
+      </div>
+    </div>
+
+  </section>
+
+  <!-- PERMISSIONS -->
+
+  <section class="card staff-section">
+
+    <div class="staff-section-head">
+      <div>
+        <h2>My Permissions</h2>
+        <p class="muted">
+          Permissions assigned to this staff account.
+        </p>
+      </div>
+    </div>
+
+    <div id="permissionWorkspace" class="permission-list">
+      <div class="empty-state">
+        Loading permissions…
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<!-- Resource modal -->
+
+<div id="resourceModal" class="modal" style="display:none;">
+  <div class="card" id="resourceModalBody"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="staff.js"></script>
+
+</body>
+</html>
