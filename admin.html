@@ -1,1 +1,443 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudyVerse 9 — Admin</title><link rel="stylesheet" href="styles.css"></head><body><main class="shell"><header class="topbar"><a class="brand" href="dashboard.html"><span class="logo">S9</span> StudyVerse 9</a><nav class="nav"><a href="dashboard.html">Student view</a><a href="admin.html">Admin</a><a href="staff.html">Staff</a><button onclick="signOut()">Sign out</button></nav></header><section class="hero"><span class="pill">Administrator</span><h1>Control centre</h1><p>Manage the learning catalogue, publishing state, resources, announcements and staff access from one place.</p></section><section id="overview" class="grid"></section><section class="split" style="margin-top:18px"><div class="card"><div class="actions" style="justify-content:space-between"><h2>Chapters</h2><button class="btn small" onclick="openChapter()">+ Add chapter</button></div><div id="chapterTable" class="table-wrap"></div></div><div class="card"><div class="actions" style="justify-content:space-between"><h2>Resources</h2><button class="btn small" onclick="openResourceForm()">+ Add resource</button></div><div id="resourceTable" class="table-wrap"></div></div></section><section class="card" style="margin-top:18px"><div class="actions" style="justify-content:space-between"><h2>Announcements</h2><button class="btn small" onclick="openAnnouncement()">+ New announcement</button></div><div id="announcementTable"></div></section></main><div id="modal" class="modal"><div class="card" id="modalBody"></div></div><div id="toast" class="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script><script src="admin.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>StudyVerse 9 — Admin Control Centre</title>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .admin-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:14px;
+    }
+
+    .admin-stat{
+      min-height:125px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    .admin-stat .stat{
+      font-size:2rem;
+    }
+
+    .admin-section{
+      margin-top:20px;
+    }
+
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+
+    .section-head h2{
+      margin:0;
+    }
+
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .tab-btn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:inherit;
+      padding:9px 14px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+
+    .tab-btn.active{
+      background:rgba(120,120,255,.22);
+      border-color:rgba(150,150,255,.5);
+    }
+
+    .status{
+      display:inline-flex;
+      padding:5px 9px;
+      border-radius:999px;
+      font-size:.78rem;
+      background:rgba(255,255,255,.08);
+    }
+
+    .status.pending{
+      background:rgba(255,190,70,.15);
+    }
+
+    .status.approved,
+    .status.published{
+      background:rgba(70,210,130,.15);
+    }
+
+    .status.rejected{
+      background:rgba(255,80,80,.15);
+    }
+
+    .notification{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding:14px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      margin-bottom:10px;
+      background:rgba(255,255,255,.025);
+    }
+
+    .notification.unread{
+      border-color:rgba(120,140,255,.35);
+      background:rgba(100,120,255,.07);
+    }
+
+    .notification h3{
+      margin:0 0 5px;
+    }
+
+    .notification p{
+      margin:0;
+    }
+
+    .muted{
+      opacity:.7;
+    }
+
+    .role-pill{
+      display:inline-flex;
+      padding:5px 9px;
+      border-radius:999px;
+      background:rgba(130,130,255,.12);
+      font-size:.78rem;
+      text-transform:capitalize;
+    }
+
+    .role-admin{
+      background:rgba(255,170,60,.16);
+    }
+
+    .role-manager{
+      background:rgba(80,180,255,.16);
+    }
+
+    .role-staff{
+      background:rgba(100,220,150,.16);
+    }
+
+    .role-student{
+      background:rgba(255,255,255,.08);
+    }
+
+    .empty{
+      padding:25px;
+      text-align:center;
+      opacity:.65;
+    }
+
+    .danger-zone{
+      border:1px solid rgba(255,80,80,.2);
+    }
+
+    .wide-table{
+      overflow:auto;
+    }
+
+    .wide-table table{
+      min-width:760px;
+    }
+
+    .modal{
+      z-index:1000;
+    }
+
+    @media(max-width:900px){
+      .admin-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media(max-width:560px){
+      .admin-grid{
+        grid-template-columns:1fr;
+      }
+
+      .notification{
+        flex-direction:column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="shell">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+
+    <a class="brand" href="dashboard.html">
+      <span class="logo">S9</span>
+      StudyVerse 9
+    </a>
+
+    <nav class="nav">
+
+      <a href="dashboard.html">
+        Student view
+      </a>
+
+      <a href="staff.html">
+        Staff
+      </a>
+
+      <a href="manager.html">
+        Manager
+      </a>
+
+      <a href="admin.html">
+        Admin
+      </a>
+
+      <button onclick="signOut()">
+        Sign out
+      </button>
+
+    </nav>
+
+  </header>
+
+
+  <!-- HERO -->
+  <section class="hero">
+
+    <span class="pill">
+      Administrator
+    </span>
+
+    <h1>
+      Control centre
+    </h1>
+
+    <p>
+      Monitor StudyVerse 9, manage users and learning content,
+      review staff work, publish resources and keep the platform organised.
+    </p>
+
+  </section>
+
+
+  <!-- ANALYTICS -->
+  <section class="admin-section">
+
+    <div class="section-head">
+      <div>
+        <h2>Platform overview</h2>
+        <p class="muted">
+          Live figures from the StudyVerse 9 database.
+        </p>
+      </div>
+
+      <button
+        class="btn small"
+        onclick="loadAdmin()">
+        ↻ Refresh
+      </button>
+    </div>
+
+    <section id="overview" class="admin-grid"></section>
+
+  </section>
+
+
+  <!-- NOTIFICATIONS -->
+  <section class="card admin-section">
+
+    <div class="section-head">
+
+      <div>
+        <h2>Admin notifications</h2>
+        <p class="muted">
+          Staff and manager activity requiring attention.
+        </p>
+      </div>
+
+      <button
+        class="btn small alt"
+        onclick="markAllNotificationsRead()">
+        Mark all read
+      </button>
+
+    </div>
+
+    <div id="notifications">
+      <div class="empty">
+        Loading notifications…
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- REVIEW QUEUE -->
+  <section class="card admin-section">
+
+    <div class="section-head">
+
+      <div>
+        <h2>Resource review queue</h2>
+        <p class="muted">
+          Review staff and manager resource work.
+        </p>
+      </div>
+
+    </div>
+
+    <div id="reviewQueue"></div>
+
+  </section>
+
+
+  <!-- USERS -->
+  <section class="card admin-section">
+
+    <div class="section-head">
+
+      <div>
+        <h2>Users & roles</h2>
+        <p class="muted">
+          Manage StudyVerse 9 account roles.
+        </p>
+      </div>
+
+    </div>
+
+    <div id="userTable" class="wide-table"></div>
+
+  </section>
+
+
+  <!-- CHAPTERS + RESOURCES -->
+  <section class="admin-grid admin-section">
+
+    <div class="card" style="grid-column:span 2">
+
+      <div class="section-head">
+
+        <h2>Chapters</h2>
+
+        <button
+          class="btn small"
+          onclick="openChapter()">
+          + Add chapter
+        </button>
+
+      </div>
+
+      <div
+        id="chapterTable"
+        class="wide-table">
+      </div>
+
+    </div>
+
+
+    <div class="card" style="grid-column:span 2">
+
+      <div class="section-head">
+
+        <h2>Resources</h2>
+
+        <button
+          class="btn small"
+          onclick="openResourceForm()">
+          + Add resource
+        </button>
+
+      </div>
+
+      <div
+        id="resourceTable"
+        class="wide-table">
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ANNOUNCEMENTS -->
+  <section class="card admin-section">
+
+    <div class="section-head">
+
+      <h2>Announcements</h2>
+
+      <button
+        class="btn small"
+        onclick="openAnnouncement()">
+        + New announcement
+      </button>
+
+    </div>
+
+    <div id="announcementTable"></div>
+
+  </section>
+
+
+  <!-- FOOTER -->
+  <section
+    class="card admin-section"
+    style="text-align:center">
+
+    <p class="muted">
+      StudyVerse 9 Administration
+    </p>
+
+    <p class="muted">
+      Changes made here can affect the learning experience for all students.
+    </p>
+
+  </section>
+
+</main>
+
+
+<!-- MODAL -->
+<div
+  id="modal"
+  class="modal">
+
+  <div
+    class="card"
+    id="modalBody">
+  </div>
+
+</div>
+
+
+<!-- TOAST -->
+<div
+  id="toast"
+  class="toast">
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="admin.js"></script>
+
+</body>
+</html>
