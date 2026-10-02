@@ -1,1 +1,800 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudyVerse 9 — Staff</title><link rel="stylesheet" href="admin.css"></head><body><header class="top"><div class="topin"><a class="brand" href="dashboard.html"><span class="logo">9</span>StudyVerse 9</a><button id="menuBtn" class="btn menu">☰</button><nav id="nav" class="nav"></nav><div class="actions"><a class="btn desktop-only" href="dashboard.html">Student view</a><button class="btn" onclick="signOut()">Sign out</button></div></div></header><main class="main"><section class="hero"><div><div class="eyebrow">STAFF WORKSPACE</div><h1>Create, submit, track.</h1><p>A clean workspace for drafts, review and feedback.</p></div><div class="mark">9</div></section><div id="staffMetrics" class="grid g4"></div><section class="section grid g2"><div class="card"><div class="head"><h2>My resource work</h2><button class="btn primary small" onclick="openStaffResource()">+ New draft</button></div><div id="staffResources"></div></div><div class="card"><div class="head"><h2>Review history</h2><button class="btn small" onclick="loadStaff()">Refresh</button></div><div id="staffReviews"></div></div></section><div class="card section"><h2>Staff workflow</h2><div class="grid g3"><div class="quick"><span class="qi">1</span><span><b class="qt">Draft</b><br><span class="qs">Create unpublished work.</span></span></div><div class="quick"><span class="qi">2</span><span><b class="qt">Submit</b><br><span class="qs">Send for manager review.</span></span></div><div class="quick"><span class="qi">3</span><span><b class="qt">Track</b><br><span class="qs">See approval or notes.</span></span></div></div></div></main><div id="staffModal" class="modal"><div class="card modalcard"><div class="modalhead"><h2>New draft</h2><button class="btn small" onclick="closeStaffModal()">Close</button></div><div class="field"><label>Title</label><input id="sTitle"></div><div class="field"><label>Chapter ID</label><input id="sChapter"></div><div class="field"><label>Type</label><select id="sType"><option>notes</option><option>solution</option><option>exercise</option><option>video</option><option>pdf</option><option>important</option></select></div><div class="field"><label>Description</label><textarea id="sDesc"></textarea></div><div class="field"><label>External URL (optional)</label><input id="sUrl"></div><button class="btn primary" onclick="saveStaffDraft()">Save draft</button></div></div><div id="toast" class="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script><script src="admin-nav.js"></script><script src="staff.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>StudyVerse 9 — Staff</title>
+
+  <link rel="stylesheet" href="admin.css">
+
+  <style>
+    .sv-upload-page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .sv-page-head {
+      margin-bottom: 24px;
+    }
+
+    .sv-page-head h1 {
+      margin: 0;
+      font-size: 30px;
+      color: #172033;
+    }
+
+    .sv-page-head p {
+      margin: 7px 0 0;
+      color: #687386;
+    }
+
+    .sv-upload-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .sv-card {
+      background: #ffffff;
+      border: 1px solid #e5e9f2;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 8px 28px rgba(40, 50, 80, 0.06);
+    }
+
+    .sv-card h2 {
+      margin: 0 0 18px;
+      color: #172033;
+      font-size: 19px;
+    }
+
+    .sv-field {
+      margin-bottom: 17px;
+    }
+
+    .sv-field label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: 600;
+      color: #293348;
+      font-size: 14px;
+    }
+
+    .sv-field select,
+    .sv-field input,
+    .sv-field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #dce2ec;
+      border-radius: 11px;
+      padding: 12px 13px;
+      background: #fff;
+      color: #1d2738;
+      font: inherit;
+      outline: none;
+    }
+
+    .sv-field select:focus,
+    .sv-field input:focus,
+    .sv-field textarea:focus {
+      border-color: #6478e8;
+      box-shadow: 0 0 0 3px rgba(100, 120, 232, 0.12);
+    }
+
+    .sv-field textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .sv-field select:disabled {
+      background: #f4f6fa;
+      color: #929aaa;
+    }
+
+    .sv-required {
+      color: #d34d67;
+    }
+
+    .sv-file-zone {
+      border: 2px dashed #ccd4e2;
+      border-radius: 16px;
+      padding: 25px 18px;
+      text-align: center;
+      background: #fafbfe;
+      transition: 0.2s ease;
+    }
+
+    .sv-file-zone:hover {
+      border-color: #7283df;
+      background: #f8f9ff;
+    }
+
+    .sv-file-icon {
+      font-size: 38px;
+      margin-bottom: 8px;
+    }
+
+    .sv-file-zone strong {
+      display: block;
+      color: #253047;
+      margin-bottom: 5px;
+    }
+
+    .sv-file-zone span {
+      color: #7b8495;
+      font-size: 13px;
+    }
+
+    .sv-file-input {
+      display: none;
+    }
+
+    .sv-choose-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      margin-top: 14px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 10px;
+      background: #6577e8;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sv-choose-button:hover {
+      background: #5669db;
+    }
+
+    .sv-files {
+      margin-top: 15px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .sv-file-item {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 11px;
+      border: 1px solid #e5e9f1;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .sv-file-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 9px;
+      background: #eef1f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 23px;
+    }
+
+    .sv-file-preview img,
+    .sv-file-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .sv-file-name {
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #293348;
+      overflow-wrap: anywhere;
+    }
+
+    .sv-file-size {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #8a92a1;
+    }
+
+    .sv-remove {
+      border: 0;
+      background: transparent;
+      color: #c64f65;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 8px;
+    }
+
+    .sv-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .sv-button {
+      min-height: 44px;
+      border-radius: 10px;
+      padding: 0 18px;
+      border: 1px solid #dce2ec;
+      background: white;
+      color: #293348;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sv-button-primary {
+      border-color: #6577e8;
+      background: #6577e8;
+      color: white;
+    }
+
+    .sv-button-primary:hover {
+      background: #5669db;
+    }
+
+    .sv-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .sv-info {
+      background: #f7f8fc;
+      border: 1px solid #e4e8f0;
+      border-radius: 13px;
+      padding: 15px;
+      color: #626d80;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .sv-status {
+      margin-top: 15px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      display: none;
+      font-size: 14px;
+    }
+
+    .sv-status.show {
+      display: block;
+    }
+
+    .sv-status.success {
+      background: #edf9f1;
+      color: #277044;
+    }
+
+    .sv-status.error {
+      background: #fff0f2;
+      color: #a13e52;
+    }
+
+    .sv-status.loading {
+      background: #eef2ff;
+      color: #485bc1;
+    }
+
+    @media (max-width: 850px) {
+      .sv-upload-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .sv-upload-page {
+        padding: 15px;
+      }
+
+      .sv-card {
+        padding: 17px;
+        border-radius: 15px;
+      }
+
+      .sv-page-head h1 {
+        font-size: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="sv-upload-page">
+
+    <section class="sv-page-head">
+      <h1>Create Resource</h1>
+      <p>
+        Add learning material to a StudyVerse 9 chapter.
+      </p>
+    </section>
+
+    <div class="sv-upload-grid">
+
+      <!-- ================================================= -->
+      <!-- MAIN RESOURCE FORM -->
+      <!-- ================================================= -->
+
+      <section class="sv-card">
+
+        <h2>Resource Information</h2>
+
+        <!-- SUBJECT -->
+
+        <div class="sv-field">
+          <label for="resourceSubject">
+            Subject <span class="sv-required">*</span>
+          </label>
+
+          <select id="resourceSubject">
+            <option value="">
+              Loading subjects...
+            </option>
+          </select>
+        </div>
+
+        <!-- PART -->
+
+        <div class="sv-field">
+          <label for="resourcePart">
+            Part <span class="sv-required">*</span>
+          </label>
+
+          <select
+            id="resourcePart"
+            disabled
+          >
+            <option value="">
+              Select subject first
+            </option>
+          </select>
+        </div>
+
+        <!-- CHAPTER -->
+
+        <div class="sv-field">
+          <label for="resourceChapter">
+            Chapter <span class="sv-required">*</span>
+          </label>
+
+          <select
+            id="resourceChapter"
+            disabled
+          >
+            <option value="">
+              Select part first
+            </option>
+          </select>
+        </div>
+
+        <!-- RESOURCE TYPE -->
+
+        <div class="sv-field">
+          <label for="resourceType">
+            Resource Type <span class="sv-required">*</span>
+          </label>
+
+          <select id="resourceType">
+            <option value="notes">Notes</option>
+            <option value="solutions">Solutions</option>
+            <option value="exercises">Exercises</option>
+            <option value="important">Important Questions</option>
+            <option value="videos">Videos</option>
+            <option value="books">Books</option>
+            <option value="practice">Practice</option>
+            <option value="pdfs">PDF Library</option>
+          </select>
+        </div>
+
+        <!-- TITLE -->
+
+        <div class="sv-field">
+          <label for="resourceTitle">
+            Resource Title <span class="sv-required">*</span>
+          </label>
+
+          <input
+            id="resourceTitle"
+            type="text"
+            maxlength="200"
+            placeholder="Example: Chapter 1 Complete Notes"
+          >
+        </div>
+
+        <!-- DESCRIPTION -->
+
+        <div class="sv-field">
+          <label for="resourceDescription">
+            Description
+          </label>
+
+          <textarea
+            id="resourceDescription"
+            maxlength="2000"
+            placeholder="Briefly describe this resource..."
+          ></textarea>
+        </div>
+
+        <!-- FILE ATTACHMENT -->
+
+        <div class="sv-field">
+
+          <label>
+            Attach Files
+          </label>
+
+          <div class="sv-file-zone">
+
+            <div class="sv-file-icon">
+              📎
+            </div>
+
+            <strong>
+              Add PDFs, images or videos
+            </strong>
+
+            <span>
+              You can select multiple files.
+            </span>
+
+            <br>
+
+            <label
+              for="resourceFiles"
+              class="sv-choose-button"
+            >
+              Choose Files
+            </label>
+
+            <input
+              id="resourceFiles"
+              class="sv-file-input"
+              type="file"
+              accept="application/pdf,image/*,video/*"
+              multiple
+            >
+
+          </div>
+
+          <div
+            id="selectedFiles"
+            class="sv-files"
+          ></div>
+
+        </div>
+
+        <!-- ACTIONS -->
+
+        <div class="sv-actions">
+
+          <button
+            type="button"
+            id="saveDraftButton"
+            class="sv-button"
+          >
+            Save Draft
+          </button>
+
+          <button
+            type="button"
+            id="submitResourceButton"
+            class="sv-button sv-button-primary"
+          >
+            Submit for Review
+          </button>
+
+        </div>
+
+        <div
+          id="resourceStatus"
+          class="sv-status"
+          aria-live="polite"
+        ></div>
+
+      </section>
+
+
+      <!-- ================================================= -->
+      <!-- INFORMATION PANEL -->
+      <!-- ================================================= -->
+
+      <aside class="sv-card">
+
+        <h2>Resource Workflow</h2>
+
+        <div class="sv-info">
+
+          <strong>1. Select curriculum</strong>
+
+          <br>
+
+          Choose the subject, part and chapter where this
+          resource belongs.
+
+          <br><br>
+
+          <strong>2. Add resource information</strong>
+
+          <br>
+
+          Give the resource a clear title and select its
+          learning category.
+
+          <br><br>
+
+          <strong>3. Attach files</strong>
+
+          <br>
+
+          PDFs, pictures and video files can be selected
+          directly from your phone or computer.
+
+          <br><br>
+
+          <strong>4. Save draft</strong>
+
+          <br>
+
+          Keep the resource unpublished while you continue
+          working.
+
+          <br><br>
+
+          <strong>5. Submit for review</strong>
+
+          <br>
+
+          A Manager/Admin can review and publish the
+          resource.
+
+        </div>
+
+        <br>
+
+        <div class="sv-info">
+
+          <strong>Supported files</strong>
+
+          <br><br>
+
+          📄 PDF
+
+          <br>
+
+          🖼️ JPG, PNG, WEBP and other browser-supported images
+
+          <br>
+
+          🎬 MP4 and other browser-supported videos
+
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+
+
+  <!-- ===================================================== -->
+  <!-- SUPABASE -->
+  <!-- ===================================================== -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="config.js"></script>
+
+  <script src="staff.js"></script>
+
+
+  <!-- ===================================================== -->
+  <!-- FILE PREVIEW LOGIC -->
+  <!-- ===================================================== -->
+
+  <script>
+
+    const resourceFiles =
+      document.getElementById("resourceFiles");
+
+    const selectedFiles =
+      document.getElementById("selectedFiles");
+
+    let selectedFileList = [];
+
+    function formatFileSize(bytes) {
+
+      if (!bytes || bytes < 1024) {
+        return `${bytes || 0} B`;
+      }
+
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+      }
+
+      if (bytes < 1024 * 1024 * 1024) {
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      return `${(
+        bytes /
+        (1024 * 1024 * 1024)
+      ).toFixed(1)} GB`;
+    }
+
+
+    function getFileIcon(file) {
+
+      if (file.type === "application/pdf") {
+        return "📄";
+      }
+
+      if (file.type.startsWith("image/")) {
+        return "🖼️";
+      }
+
+      if (file.type.startsWith("video/")) {
+        return "🎬";
+      }
+
+      return "📎";
+    }
+
+
+    function renderSelectedFiles() {
+
+      selectedFiles.innerHTML = "";
+
+      selectedFileList.forEach(
+        (file, index) => {
+
+          const item =
+            document.createElement("div");
+
+          item.className =
+            "sv-file-item";
+
+
+          const preview =
+            document.createElement("div");
+
+          preview.className =
+            "sv-file-preview";
+
+
+          if (file.type.startsWith("image/")) {
+
+            const img =
+              document.createElement("img");
+
+            img.src =
+              URL.createObjectURL(file);
+
+            img.alt =
+              file.name;
+
+            preview.appendChild(img);
+
+          } else if (
+            file.type.startsWith("video/")
+          ) {
+
+            const video =
+              document.createElement("video");
+
+            video.src =
+              URL.createObjectURL(file);
+
+            video.muted = true;
+
+            video.preload = "metadata";
+
+            preview.appendChild(video);
+
+          } else {
+
+            preview.textContent =
+              getFileIcon(file);
+          }
+
+
+          const information =
+            document.createElement("div");
+
+          const name =
+            document.createElement("div");
+
+          name.className =
+            "sv-file-name";
+
+          name.textContent =
+            file.name;
+
+
+          const size =
+            document.createElement("div");
+
+          size.className =
+            "sv-file-size";
+
+          size.textContent =
+            formatFileSize(file.size);
+
+
+          information.appendChild(name);
+          information.appendChild(size);
+
+
+          const remove =
+            document.createElement("button");
+
+          remove.type =
+            "button";
+
+          remove.className =
+            "sv-remove";
+
+          remove.textContent =
+            "Remove";
+
+          remove.addEventListener(
+            "click",
+            () => {
+
+              selectedFileList.splice(
+                index,
+                1
+              );
+
+              renderSelectedFiles();
+            }
+          );
+
+
+          item.appendChild(preview);
+          item.appendChild(information);
+          item.appendChild(remove);
+
+          selectedFiles.appendChild(item);
+        }
+      );
+    }
+
+
+    resourceFiles.addEventListener(
+      "change",
+      function () {
+
+        const incoming =
+          Array.from(
+            resourceFiles.files || []
+          );
+
+        selectedFileList =
+          selectedFileList.concat(
+            incoming
+          );
+
+        renderSelectedFiles();
+
+        /*
+          Reset the input so the same file can
+          be selected again after removal.
+        */
+
+        resourceFiles.value = "";
+      }
+    );
+
+  </script>
+
+</body>
+  </html>
+        ^
