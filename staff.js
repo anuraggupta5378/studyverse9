@@ -1,373 +1,269 @@
-let staffResources = [];
-let staffReviews = [];
+// StudyVerse 9 — Staff Resource Upload
+// Phase 13.3A
 
-(async function () {
+(function () {
+  "use strict";
 
-  const access =
-    await requireRole([
-      "staff",
-      "admin"
-    ]);
+  const cfg = window.STUDYVERSE_CONFIG;
 
-  if (!access) return;
+  if (!cfg || !cfg.supabaseUrl || !cfg.supabaseKey) {
+    console.error("StudyVerse configuration missing.");
+    return;
+  }
 
-  await loadStaff();
+  const sb = window.supabase.createClient(
+    cfg.supabaseUrl,
+    cfg.supabaseKey
+  );
+
+  const $ = (id) => document.getElementById(id);
+
+  let subjects = [];
+  let parts = [];
+  let chapters = [];
+
+  /* -----------------------------
+     AUTH
+  ----------------------------- */
+
+  async function requireStaffAccess() {
+    const {
+      data: { user },
+      error
+    } = await sb.auth.getUser();
+
+    if (error || !user) {
+      window.location.href = "index.html";
+      return null;
+    }
+
+    const { data: profile, error: profileError } = await sb
+      .from("profiles")
+      .select("id, full_name, role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      alert("Unable to load your profile.");
+      return null;
+    }
+
+    if (!["staff", "manager", "admin"].includes(profile.role)) {
+      alert("You do not have permission to access this page.");
+      window.location.href = "dashboard.html";
+      return null;
+    }
+
+    return { user, profile };
+  }
+
+  /* -----------------------------
+     LOAD SUBJECTS
+  ----------------------------- */
+
+  async function loadSubjects() {
+    const select = $("resourceSubject");
+
+    if (!select) return;
+
+    select.innerHTML =
+      '<option value="">Select subject</option>';
+
+    const { data, error } = await sb
+      .from("subjects")
+      .select("id, name, slug, display_order")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      alert("Could not load subjects.");
+      return;
+    }
+
+    subjects = data || [];
+
+    subjects.forEach((subject) => {
+      const option = document.createElement("option");
+
+      option.value = subject.id;
+      option.textContent = subject.name;
+
+      select.appendChild(option);
+    });
+  }
+
+  /* -----------------------------
+     LOAD PARTS
+  ----------------------------- */
+
+  async function loadParts(subjectId) {
+    const partSelect = $("resourcePart");
+    const chapterSelect = $("resourceChapter");
+
+    if (!partSelect) return;
+
+    partSelect.innerHTML =
+      '<option value="">Select part</option>';
+
+    if (chapterSelect) {
+      chapterSelect.innerHTML =
+        '<option value="">Select chapter</option>';
+      chapterSelect.disabled = true;
+    }
+
+    partSelect.disabled = true;
+
+    if (!subjectId) return;
+
+    /*
+      chapters.part_id references the curriculum part.
+
+      We obtain the available parts through the
+      chapters belonging to the selected subject.
+    */
+
+    const { data, error } = await sb
+      .from("chapters")
+      .select(`
+        id,
+        name,
+        chapter_number,
+        display_order,
+        part_id
+      `)
+      .eq("subject_id", subjectId)
+      .eq("is_published", true)
+      .not("part_id", "is", null)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      alert("Could not load curriculum parts.");
+      return;
+    }
+
+    const uniqueParts = [];
+    const seen = new Set();
+
+    (data || []).forEach((chapter) => {
+      if (!seen.has(chapter.part_id)) {
+        seen.add(chapter.part_id);
+
+        uniqueParts.push({
+          id: chapter.part_id,
+          name: "Part " + (uniqueParts.length + 1)
+        });
+      }
+    });
+
+    parts = uniqueParts;
+
+    parts.forEach((part) => {
+      const option = document.createElement("option");
+
+      option.value = part.id;
+      option.textContent = part.name;
+
+      partSelect.appendChild(option);
+    });
+
+    partSelect.disabled = parts.length === 0;
+  }
+
+  /* -----------------------------
+     LOAD CHAPTERS
+  ----------------------------- */
+
+  async function loadChapters(subjectId, partId) {
+    const chapterSelect = $("resourceChapter");
+
+    if (!chapterSelect) return;
+
+    chapterSelect.innerHTML =
+      '<option value="">Select chapter</option>';
+
+    chapterSelect.disabled = true;
+
+    if (!subjectId || !partId) return;
+
+    const { data, error } = await sb
+      .from("chapters")
+      .select(`
+        id,
+        name,
+        chapter_number,
+        display_order,
+        part_id
+      `)
+      .eq("subject_id", subjectId)
+      .eq("part_id", partId)
+      .eq("is_published", true)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      alert("Could not load chapters.");
+      return;
+    }
+
+    chapters = data || [];
+
+    chapters.forEach((chapter) => {
+      const option = document.createElement("option");
+
+      option.value = chapter.id;
+
+      const number =
+        chapter.chapter_number != null
+          ? `Chapter ${chapter.chapter_number} — `
+          : "";
+
+      option.textContent = number + chapter.name;
+
+      chapterSelect.appendChild(option);
+    });
+
+    chapterSelect.disabled = chapters.length === 0;
+  }
+
+  /* -----------------------------
+     EVENTS
+  ----------------------------- */
+
+  function setupCurriculumSelectors() {
+    const subject = $("resourceSubject");
+    const part = $("resourcePart");
+
+    if (subject) {
+      subject.addEventListener("change", () => {
+        loadParts(subject.value);
+      });
+    }
+
+    if (part) {
+      part.addEventListener("change", () => {
+        loadChapters(
+          subject ? subject.value : "",
+          part.value
+        );
+      });
+    }
+  }
+
+  /* -----------------------------
+     START
+  ----------------------------- */
+
+  async function init() {
+    const access = await requireStaffAccess();
+
+    if (!access) return;
+
+    setupCurriculumSelectors();
+    await loadSubjects();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
 
 })();
-
-async function loadStaff() {
-
-  try {
-
-    const user =
-      await currentUser();
-
-    const [
-      resourceResult,
-      reviewResult
-    ] = await Promise.all([
-
-      sb
-        .from("resources")
-        .select("*")
-        .eq("created_by", user.id)
-        .order("created_at", {
-          ascending: false
-        }),
-
-      sb
-        .from("resource_change_requests")
-        .select("*")
-        .eq("submitted_by", user.id)
-        .order("created_at", {
-          ascending: false
-        })
-    ]);
-
-    if (resourceResult.error)
-      throw resourceResult.error;
-
-    if (reviewResult.error)
-      throw reviewResult.error;
-
-    staffResources =
-      resourceResult.data || [];
-
-    staffReviews =
-      reviewResult.data || [];
-
-    renderStaff();
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast(
-      error.message ||
-      "Staff workspace failed."
-    );
-  }
-}
-
-function renderStaff() {
-
-  const pending =
-    staffReviews.filter(
-      item => item.status === "pending"
-    ).length;
-
-  const approved =
-    staffReviews.filter(
-      item => item.status === "approved"
-    ).length;
-
-  const rejected =
-    staffReviews.filter(
-      item => item.status === "rejected"
-    ).length;
-
-  document.getElementById(
-    "staffMetrics"
-  ).innerHTML = [
-
-    [
-      "My resources",
-      staffResources.length,
-      "Created by you"
-    ],
-
-    [
-      "Pending",
-      pending,
-      "Awaiting manager"
-    ],
-
-    [
-      "Approved",
-      approved,
-      "Accepted work"
-    ],
-
-    [
-      "Rejected",
-      rejected,
-      "Needs revision"
-    ]
-
-  ].map(item => `
-    <div class="card">
-
-      <div class="metric-label">
-        ${item[0]}
-      </div>
-
-      <div class="metric-value">
-        ${item[1]}
-      </div>
-
-      <div class="metric-note">
-        ${item[2]}
-      </div>
-
-    </div>
-  `).join("");
-
-  document.getElementById(
-    "staffResources"
-  ).innerHTML =
-    staffResources.length
-      ? staffResources.map(item => `
-          <div class="row">
-
-            <div>
-              <div class="rowtitle">
-                ${esc(item.title)}
-              </div>
-
-              <div class="rowsub">
-                ${esc(item.resource_type)}
-              </div>
-            </div>
-
-            <div class="actions">
-
-              ${
-                item.is_published
-                  ? `
-                    <span class="badge good">
-                      Published
-                    </span>
-                  `
-                  : `
-                    <button
-                      class="btn small"
-                      onclick="submitDraft('${item.id}')"
-                    >
-                      Submit for review
-                    </button>
-                  `
-              }
-
-            </div>
-
-          </div>
-        `).join("")
-      : `<div class="empty">
-          No resources yet.
-        </div>`;
-
-  document.getElementById(
-    "staffReviews"
-  ).innerHTML =
-    staffReviews.length
-      ? staffReviews.map(item => `
-          <div class="row">
-
-            <div>
-              <div class="rowtitle">
-                ${esc(
-                  item.title ||
-                  "Untitled"
-                )}
-              </div>
-
-              <div class="rowsub">
-                ${esc(item.action)}
-                ·
-                ${new Date(
-                  item.created_at
-                ).toLocaleDateString()}
-
-                ${
-                  item.review_note
-                    ? ` · ${esc(
-                        item.review_note
-                      )}`
-                    : ""
-                }
-              </div>
-            </div>
-
-            <span class="badge ${
-              item.status === "approved"
-                ? "good"
-                : item.status === "rejected"
-                  ? "bad"
-                  : "warn"
-            }">
-              ${esc(item.status)}
-            </span>
-
-          </div>
-        `).join("")
-      : `<div class="empty">
-          No submissions yet.
-        </div>`;
-}
-
-function openStaffResource() {
-
-  document.getElementById(
-    "staffModal"
-  ).classList.add("show");
-
-  document.getElementById("sTitle").value = "";
-  document.getElementById("sChapter").value = "";
-  document.getElementById("sDesc").value = "";
-  document.getElementById("sUrl").value = "";
-}
-
-function closeStaffModal() {
-
-  document.getElementById(
-    "staffModal"
-  ).classList.remove("show");
-}
-
-async function saveStaffDraft() {
-
-  try {
-
-    const user =
-      await currentUser();
-
-    const { error } =
-      await sb
-        .from("resources")
-        .insert({
-
-          title:
-            document.getElementById(
-              "sTitle"
-            ).value.trim(),
-
-          chapter_id:
-            document.getElementById(
-              "sChapter"
-            ).value.trim(),
-
-          resource_type:
-            document.getElementById(
-              "sType"
-            ).value,
-
-          description:
-            document.getElementById(
-              "sDesc"
-            ).value,
-
-          external_url:
-            document.getElementById(
-              "sUrl"
-            ).value.trim(),
-
-          created_by: user.id,
-          updated_by: user.id,
-          is_published: false
-        });
-
-    if (error) throw error;
-
-    closeStaffModal();
-
-    toast("Draft saved.");
-
-    await loadStaff();
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast(
-      error.message ||
-      "Could not save draft."
-    );
-  }
-}
-
-async function submitDraft(id) {
-
-  try {
-
-    const user =
-      await currentUser();
-
-    const resource =
-      staffResources.find(
-        item => item.id === id
-      );
-
-    if (!resource) return;
-
-    const { error } =
-      await sb
-        .from("resource_change_requests")
-        .insert({
-
-          resource_id: resource.id,
-
-          submitted_by: user.id,
-
-          action: "create",
-
-          title: resource.title,
-
-          resource_type:
-            resource.resource_type,
-
-          description:
-            resource.description,
-
-          content:
-            resource.content,
-
-          file_path:
-            resource.file_path,
-
-          external_url:
-            resource.external_url,
-
-          chapter_id:
-            resource.chapter_id,
-
-          status: "pending"
-        });
-
-    if (error) throw error;
-
-    toast(
-      "Draft sent for manager review."
-    );
-
-    await loadStaff();
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast(
-      error.message ||
-      "Could not submit draft."
-    );
-  }
-}
