@@ -1,13 +1,19 @@
-// StudyVerse 9 — Staff Resource Upload
-// Phase 13.3A
+// ============================================================
+// StudyVerse 9 — Staff Dashboard
+// Phase 13.3 — Resource Upload Foundation
+// ============================================================
 
 (function () {
   "use strict";
 
+  // ----------------------------------------------------------
+  // SUPABASE CONFIGURATION
+  // ----------------------------------------------------------
+
   const cfg = window.STUDYVERSE_CONFIG;
 
   if (!cfg || !cfg.supabaseUrl || !cfg.supabaseKey) {
-    console.error("StudyVerse configuration missing.");
+    console.error("StudyVerse configuration is missing.");
     return;
   }
 
@@ -16,15 +22,22 @@
     cfg.supabaseKey
   );
 
+  // ----------------------------------------------------------
+  // HELPERS
+  // ----------------------------------------------------------
+
   const $ = (id) => document.getElementById(id);
+
+  let currentUser = null;
+  let currentProfile = null;
 
   let subjects = [];
   let parts = [];
   let chapters = [];
 
-  /* -----------------------------
-     AUTH
-  ----------------------------- */
+  // ----------------------------------------------------------
+  // AUTHENTICATION
+  // ----------------------------------------------------------
 
   async function requireStaffAccess() {
     const {
@@ -37,6 +50,8 @@
       return null;
     }
 
+    currentUser = user;
+
     const { data: profile, error: profileError } = await sb
       .from("profiles")
       .select("id, full_name, role")
@@ -44,40 +59,70 @@
       .single();
 
     if (profileError || !profile) {
+      console.error(profileError);
       alert("Unable to load your profile.");
       return null;
     }
 
-    if (!["staff", "manager", "admin"].includes(profile.role)) {
-      alert("You do not have permission to access this page.");
+    currentProfile = profile;
+
+    const allowedRoles = [
+      "staff",
+      "manager",
+      "admin"
+    ];
+
+    if (!allowedRoles.includes(profile.role)) {
+      alert("You do not have permission to access the staff area.");
+
       window.location.href = "dashboard.html";
+
       return null;
     }
 
-    return { user, profile };
+    return {
+      user,
+      profile
+    };
   }
 
-  /* -----------------------------
-     LOAD SUBJECTS
-  ----------------------------- */
+  // ----------------------------------------------------------
+  // LOAD SUBJECTS
+  // ----------------------------------------------------------
 
   async function loadSubjects() {
-    const select = $("resourceSubject");
+    const subjectSelect = $("resourceSubject");
 
-    if (!select) return;
+    if (!subjectSelect) {
+      console.warn(
+        "resourceSubject select was not found on the page."
+      );
+      return;
+    }
 
-    select.innerHTML =
+    subjectSelect.innerHTML =
       '<option value="">Select subject</option>';
 
     const { data, error } = await sb
       .from("subjects")
-      .select("id, name, slug, display_order")
+      .select(`
+        id,
+        name,
+        slug,
+        display_order
+      `)
       .eq("is_active", true)
-      .order("display_order", { ascending: true });
+      .order("display_order", {
+        ascending: true
+      });
 
     if (error) {
-      console.error(error);
-      alert("Could not load subjects.");
+      console.error("Subject loading error:", error);
+
+      alert(
+        "Could not load subjects. Please refresh the page."
+      );
+
       return;
     }
 
@@ -89,40 +134,52 @@
       option.value = subject.id;
       option.textContent = subject.name;
 
-      select.appendChild(option);
+      subjectSelect.appendChild(option);
     });
   }
 
-  /* -----------------------------
-     LOAD PARTS
-  ----------------------------- */
+  // ----------------------------------------------------------
+  // LOAD PARTS
+  //
+  // There is currently NO public.parts table.
+  //
+  // Therefore, parts are derived from chapters.part_id.
+  // ----------------------------------------------------------
 
   async function loadParts(subjectId) {
     const partSelect = $("resourcePart");
     const chapterSelect = $("resourceChapter");
 
-    if (!partSelect) return;
+    if (!partSelect) {
+      console.warn(
+        "resourcePart select was not found on the page."
+      );
 
+      return;
+    }
+
+    // Reset Part selector
     partSelect.innerHTML =
       '<option value="">Select part</option>';
 
+    partSelect.disabled = true;
+
+    // Reset Chapter selector
     if (chapterSelect) {
       chapterSelect.innerHTML =
         '<option value="">Select chapter</option>';
+
       chapterSelect.disabled = true;
     }
 
-    partSelect.disabled = true;
+    parts = [];
+    chapters = [];
 
-    if (!subjectId) return;
+    if (!subjectId) {
+      return;
+    }
 
-    /*
-      chapters.part_id references the curriculum part.
-
-      We obtain the available parts through the
-      chapters belonging to the selected subject.
-    */
-
+    // Get chapters belonging to this subject
     const { data, error } = await sb
       .from("chapters")
       .select(`
@@ -135,29 +192,52 @@
       .eq("subject_id", subjectId)
       .eq("is_published", true)
       .not("part_id", "is", null)
-      .order("display_order", { ascending: true });
+      .order("display_order", {
+        ascending: true
+      });
 
     if (error) {
-      console.error(error);
-      alert("Could not load curriculum parts.");
+      console.error("Part loading error:", error);
+
+      alert(
+        "Could not load curriculum parts."
+      );
+
       return;
     }
 
-    const uniqueParts = [];
-    const seen = new Set();
+    // --------------------------------------------------------
+    // Extract unique part IDs
+    // --------------------------------------------------------
+
+    const uniquePartIds = [];
 
     (data || []).forEach((chapter) => {
-      if (!seen.has(chapter.part_id)) {
-        seen.add(chapter.part_id);
-
-        uniqueParts.push({
-          id: chapter.part_id,
-          name: "Part " + (uniqueParts.length + 1)
-        });
+      if (
+        chapter.part_id &&
+        !uniquePartIds.includes(chapter.part_id)
+      ) {
+        uniquePartIds.push(chapter.part_id);
       }
     });
 
-    parts = uniqueParts;
+    // --------------------------------------------------------
+    // Create Part objects
+    //
+    // Since there is no parts table, the display name is
+    // temporarily generated from the order.
+    // --------------------------------------------------------
+
+    parts = uniquePartIds.map((partId, index) => {
+      return {
+        id: partId,
+        name: `Part ${index + 1}`
+      };
+    });
+
+    // --------------------------------------------------------
+    // Add parts to selector
+    // --------------------------------------------------------
 
     parts.forEach((part) => {
       const option = document.createElement("option");
@@ -169,23 +249,39 @@
     });
 
     partSelect.disabled = parts.length === 0;
+
+    // Helpful empty state
+    if (parts.length === 0) {
+      partSelect.innerHTML =
+        '<option value="">No parts available</option>';
+    }
   }
 
-  /* -----------------------------
-     LOAD CHAPTERS
-  ----------------------------- */
+  // ----------------------------------------------------------
+  // LOAD CHAPTERS
+  // ----------------------------------------------------------
 
   async function loadChapters(subjectId, partId) {
     const chapterSelect = $("resourceChapter");
 
-    if (!chapterSelect) return;
+    if (!chapterSelect) {
+      console.warn(
+        "resourceChapter select was not found on the page."
+      );
+
+      return;
+    }
 
     chapterSelect.innerHTML =
       '<option value="">Select chapter</option>';
 
     chapterSelect.disabled = true;
 
-    if (!subjectId || !partId) return;
+    chapters = [];
+
+    if (!subjectId || !partId) {
+      return;
+    }
 
     const { data, error } = await sb
       .from("chapters")
@@ -193,77 +289,239 @@
         id,
         name,
         chapter_number,
+        description,
         display_order,
         part_id
       `)
       .eq("subject_id", subjectId)
       .eq("part_id", partId)
       .eq("is_published", true)
-      .order("display_order", { ascending: true });
+      .order("display_order", {
+        ascending: true
+      });
 
     if (error) {
-      console.error(error);
-      alert("Could not load chapters.");
+      console.error(
+        "Chapter loading error:",
+        error
+      );
+
+      alert(
+        "Could not load chapters."
+      );
+
       return;
     }
 
     chapters = data || [];
+
+    // --------------------------------------------------------
+    // Add chapters
+    // --------------------------------------------------------
 
     chapters.forEach((chapter) => {
       const option = document.createElement("option");
 
       option.value = chapter.id;
 
-      const number =
-        chapter.chapter_number != null
-          ? `Chapter ${chapter.chapter_number} — `
-          : "";
+      let label = "";
 
-      option.textContent = number + chapter.name;
+      if (chapter.chapter_number !== null) {
+        label +=
+          `Chapter ${chapter.chapter_number} — `;
+      }
+
+      label += chapter.name;
+
+      option.textContent = label;
 
       chapterSelect.appendChild(option);
     });
 
     chapterSelect.disabled = chapters.length === 0;
+
+    if (chapters.length === 0) {
+      chapterSelect.innerHTML =
+        '<option value="">No chapters available</option>';
+    }
   }
 
-  /* -----------------------------
-     EVENTS
-  ----------------------------- */
+  // ----------------------------------------------------------
+  // SELECTOR EVENTS
+  // ----------------------------------------------------------
 
   function setupCurriculumSelectors() {
-    const subject = $("resourceSubject");
-    const part = $("resourcePart");
+    const subjectSelect = $("resourceSubject");
+    const partSelect = $("resourcePart");
 
-    if (subject) {
-      subject.addEventListener("change", () => {
-        loadParts(subject.value);
-      });
+    // Subject changed
+    if (subjectSelect) {
+      subjectSelect.addEventListener(
+        "change",
+        async function () {
+          const subjectId = this.value;
+
+          await loadParts(subjectId);
+        }
+      );
     }
 
-    if (part) {
-      part.addEventListener("change", () => {
-        loadChapters(
-          subject ? subject.value : "",
-          part.value
-        );
-      });
+    // Part changed
+    if (partSelect) {
+      partSelect.addEventListener(
+        "change",
+        async function () {
+          const subjectId =
+            subjectSelect
+              ? subjectSelect.value
+              : "";
+
+          const partId = this.value;
+
+          await loadChapters(
+            subjectId,
+            partId
+          );
+        }
+      );
     }
   }
 
-  /* -----------------------------
-     START
-  ----------------------------- */
+  // ----------------------------------------------------------
+  // SELECTED CHAPTER HELPER
+  // ----------------------------------------------------------
 
-  async function init() {
-    const access = await requireStaffAccess();
+  function getSelectedChapter() {
+    const chapterSelect = $("resourceChapter");
 
-    if (!access) return;
+    if (!chapterSelect) {
+      return null;
+    }
+
+    const chapterId = chapterSelect.value;
+
+    if (!chapterId) {
+      return null;
+    }
+
+    return (
+      chapters.find(
+        (chapter) =>
+          chapter.id === chapterId
+      ) || null
+    );
+  }
+
+  // ----------------------------------------------------------
+  // GET SELECTED CURRICULUM
+  // ----------------------------------------------------------
+
+  function getSelectedCurriculum() {
+    const subjectSelect =
+      $("resourceSubject");
+
+    const partSelect =
+      $("resourcePart");
+
+    const chapterSelect =
+      $("resourceChapter");
+
+    const subject =
+      subjects.find(
+        (item) =>
+          item.id ===
+          (subjectSelect
+            ? subjectSelect.value
+            : "")
+      ) || null;
+
+    const part =
+      parts.find(
+        (item) =>
+          item.id ===
+          (partSelect
+            ? partSelect.value
+            : "")
+      ) || null;
+
+    const chapter =
+      getSelectedChapter();
+
+    return {
+      subject,
+      part,
+      chapter
+    };
+  }
+
+  // ----------------------------------------------------------
+  // DEBUG HELPER
+  // ----------------------------------------------------------
+
+  window.getStudyVerseCurriculum =
+    function () {
+      const result =
+        getSelectedCurriculum();
+
+      console.log(
+        "Selected StudyVerse curriculum:",
+        result
+      );
+
+      return result;
+    };
+
+  // ----------------------------------------------------------
+  // SIGN OUT
+  // ----------------------------------------------------------
+
+  async function signOutStaff() {
+    try {
+      await sb.auth.signOut();
+
+      window.location.href =
+        "index.html";
+    } catch (error) {
+      console.error(
+        "Sign out error:",
+        error
+      );
+    }
+  }
+
+  // Make available to HTML buttons
+  window.signOutStaff =
+    signOutStaff;
+
+  // ----------------------------------------------------------
+  // INITIALISE STAFF PAGE
+  // ----------------------------------------------------------
+
+  async function initStaffPage() {
+    const access =
+      await requireStaffAccess();
+
+    if (!access) {
+      return;
+    }
 
     setupCurriculumSelectors();
+
     await loadSubjects();
+
+    console.log(
+      "StudyVerse 9 Staff page ready.",
+      access.profile
+    );
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  // ----------------------------------------------------------
+  // START
+  // ----------------------------------------------------------
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initStaffPage
+  );
 
 })();
