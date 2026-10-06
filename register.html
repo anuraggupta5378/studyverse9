@@ -19,7 +19,7 @@
   <!-- Shared application code -->
   <script src="app.js"></script>
 
-  <!-- New StudyVerse design -->
+  <!-- StudyVerse design -->
   <link rel="stylesheet" href="brand.css">
 </head>
 
@@ -39,7 +39,6 @@
         <span>CLASS 9</span>
       </div>
     </a>
-
 
     <!-- Registration card -->
     <section class="auth-card">
@@ -62,15 +61,11 @@
 
       </div>
 
-
       <form id="registerForm">
 
         <!-- Name -->
         <div class="field">
-
-          <label for="name">
-            Full name
-          </label>
+          <label for="name">Full name</label>
 
           <input
             id="name"
@@ -79,16 +74,11 @@
             autocomplete="name"
             required
           >
-
         </div>
-
 
         <!-- Email -->
         <div class="field">
-
-          <label for="email">
-            Email address
-          </label>
+          <label for="email">Email address</label>
 
           <input
             id="email"
@@ -97,18 +87,13 @@
             autocomplete="email"
             required
           >
-
         </div>
-
 
         <!-- Password -->
         <div class="field">
 
           <div class="field-top">
-
-            <label for="password">
-              Password
-            </label>
+            <label for="password">Password</label>
 
             <button
               type="button"
@@ -117,7 +102,6 @@
             >
               Show
             </button>
-
           </div>
 
           <input
@@ -131,12 +115,10 @@
 
         </div>
 
-
         <!-- Confirm password -->
         <div class="field">
 
           <div class="field-top">
-
             <label for="confirmPassword">
               Confirm password
             </label>
@@ -148,7 +130,6 @@
             >
               Show
             </button>
-
           </div>
 
           <input
@@ -162,7 +143,6 @@
 
         </div>
 
-
         <!-- Submit -->
         <button
           type="submit"
@@ -174,21 +154,19 @@
           </span>
         </button>
 
-
         <!-- Message -->
         <p
           id="registerMessage"
           class="auth-message"
+          aria-live="polite"
         ></p>
 
       </form>
-
 
       <!-- Login -->
       <div class="auth-divider">
         <span>ALREADY HAVE AN ACCOUNT?</span>
       </div>
-
 
       <a
         href="login.html"
@@ -196,7 +174,6 @@
       >
         Sign in instead
       </a>
-
 
       <a
         href="index.html"
@@ -209,13 +186,10 @@
 
   </main>
 
-
   <!-- 3D background -->
   <script src="three-bg.js"></script>
 
-
   <script>
-
     /* =====================================
        ELEMENTS
        ===================================== */
@@ -252,6 +226,42 @@
 
 
     /* =====================================
+       MESSAGE HELPER
+       ===================================== */
+
+    function showMessage(message, type = "error") {
+
+      registerMessage.textContent = message;
+
+      registerMessage.dataset.type = type;
+
+    }
+
+
+    /* =====================================
+       BUTTON STATE
+       ===================================== */
+
+    function setLoading(loading) {
+
+      registerButton.disabled = loading;
+
+      if (loading) {
+
+        registerButtonText.textContent =
+          "Creating account...";
+
+      } else {
+
+        registerButtonText.textContent =
+          "Create account";
+
+      }
+
+    }
+
+
+    /* =====================================
        CHECK EXISTING SESSION
        ===================================== */
 
@@ -259,14 +269,31 @@
 
       try {
 
+        if (!window.sb) {
+          console.error("Supabase client is missing.");
+          return;
+        }
+
         const {
-          data: { session }
+          data: { session },
+          error
         } = await sb.auth.getSession();
+
+        if (error) {
+
+          console.error(
+            "Session check error:",
+            error
+          );
+
+          return;
+        }
 
         if (session) {
 
-          window.location.href =
-            "dashboard.html";
+          window.location.replace(
+            "dashboard.html"
+          );
 
         }
 
@@ -321,7 +348,264 @@
 
 
     /* =====================================
-       MESSAGE
+       REGISTRATION
        ===================================== */
 
-   
+    form.addEventListener(
+      "submit",
+      async function(event) {
+
+        /*
+         * VERY IMPORTANT:
+         * Prevent the browser from simply
+         * reloading register.html.
+         */
+        event.preventDefault();
+        event.stopPropagation();
+
+        showMessage("");
+
+        const name =
+          nameInput.value.trim();
+
+        const email =
+          emailInput.value.trim().toLowerCase();
+
+        const password =
+          passwordInput.value;
+
+        const confirmPassword =
+          confirmPasswordInput.value;
+
+
+        /* ---------------------------------
+           BASIC VALIDATION
+           --------------------------------- */
+
+        if (!name) {
+
+          showMessage(
+            "Please enter your full name."
+          );
+
+          nameInput.focus();
+          return;
+
+        }
+
+
+        if (!email) {
+
+          showMessage(
+            "Please enter your email address."
+          );
+
+          emailInput.focus();
+          return;
+
+        }
+
+
+        if (password.length < 6) {
+
+          showMessage(
+            "Your password must be at least 6 characters."
+          );
+
+          passwordInput.focus();
+          return;
+
+        }
+
+
+        if (password !== confirmPassword) {
+
+          showMessage(
+            "The passwords do not match."
+          );
+
+          confirmPasswordInput.focus();
+          return;
+
+        }
+
+
+        /* ---------------------------------
+           CHECK SUPABASE
+           --------------------------------- */
+
+        if (!window.sb) {
+
+          showMessage(
+            "StudyVerse could not connect to its authentication system. Please refresh and try again."
+          );
+
+          console.error(
+            "Supabase client 'sb' is not available."
+          );
+
+          return;
+
+        }
+
+
+        /* ---------------------------------
+           START REGISTRATION
+           --------------------------------- */
+
+        setLoading(true);
+
+
+        try {
+
+          const {
+            data,
+            error
+          } = await sb.auth.signUp({
+
+            email: email,
+
+            password: password,
+
+            options: {
+
+              data: {
+                full_name: name
+              }
+
+            }
+
+          });
+
+
+          /* ---------------------------------
+             SUPABASE ERROR
+             --------------------------------- */
+
+          if (error) {
+
+            console.error(
+              "Registration error:",
+              error
+            );
+
+            const message =
+              error.message || "";
+
+            if (
+              message.toLowerCase().includes(
+                "already registered"
+              )
+            ) {
+
+              showMessage(
+                "This email is already registered. Please sign in instead."
+              );
+
+            } else {
+
+              showMessage(
+                message
+              );
+
+            }
+
+            return;
+
+          }
+
+
+          /* ---------------------------------
+             SUCCESS
+             --------------------------------- */
+
+          console.log(
+            "StudyVerse registration successful:",
+            data
+          );
+
+
+          /*
+           * Email confirmation is currently
+           * disabled in your Supabase project,
+           * so a session should normally be
+           * created immediately.
+           */
+
+          if (data.session) {
+
+            showMessage(
+              "Account created successfully. Opening StudyVerse...",
+              "success"
+            );
+
+            setTimeout(
+              () => {
+
+                window.location.replace(
+                  "dashboard.html"
+                );
+
+              },
+              700
+            );
+
+            return;
+
+          }
+
+
+          /*
+           * Fallback in case Supabase creates
+           * the user without immediately
+           * returning a session.
+           */
+
+          showMessage(
+            "Account created. Please sign in to continue.",
+            "success"
+          );
+
+          setTimeout(
+            () => {
+
+              window.location.replace(
+                "login.html"
+              );
+
+            },
+            1200
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "Unexpected registration error:",
+            error
+          );
+
+          showMessage(
+            "Something went wrong while creating your account. Please try again."
+          );
+
+        } finally {
+
+          setLoading(false);
+
+        }
+
+      }
+    );
+
+
+    /* =====================================
+       START
+       ===================================== */
+
+    checkSession();
+
+  </script>
+
+</body>
+</html>
