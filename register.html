@@ -3,34 +3,22 @@
 <head>
   <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Create Account — StudyVerse 9</title>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- StudyVerse configuration -->
   <script src="config.js"></script>
-
-  <!-- Shared application code -->
   <script src="app.js"></script>
-
-  <!-- StudyVerse design -->
   <link rel="stylesheet" href="brand.css">
 </head>
 
 <body class="auth-page">
 
-  <!-- 3D background -->
   <canvas id="three-bg"></canvas>
 
   <main class="auth-shell">
 
-    <!-- Brand -->
     <a href="index.html" class="auth-brand">
       <div class="brand-nine">9</div>
 
@@ -40,7 +28,6 @@
       </div>
     </a>
 
-    <!-- Registration card -->
     <section class="auth-card">
 
       <div class="auth-heading">
@@ -63,7 +50,6 @@
 
       <form id="registerForm">
 
-        <!-- Name -->
         <div class="field">
           <label for="name">Full name</label>
 
@@ -76,7 +62,6 @@
           >
         </div>
 
-        <!-- Email -->
         <div class="field">
           <label for="email">Email address</label>
 
@@ -89,7 +74,6 @@
           >
         </div>
 
-        <!-- Password -->
         <div class="field">
 
           <div class="field-top">
@@ -115,7 +99,6 @@
 
         </div>
 
-        <!-- Confirm password -->
         <div class="field">
 
           <div class="field-top">
@@ -143,7 +126,6 @@
 
         </div>
 
-        <!-- Submit -->
         <button
           type="submit"
           id="registerButton"
@@ -154,7 +136,6 @@
           </span>
         </button>
 
-        <!-- Message -->
         <p
           id="registerMessage"
           class="auth-message"
@@ -163,7 +144,6 @@
 
       </form>
 
-      <!-- Login -->
       <div class="auth-divider">
         <span>ALREADY HAVE AN ACCOUNT?</span>
       </div>
@@ -186,13 +166,9 @@
 
   </main>
 
-  <!-- 3D background -->
   <script src="three-bg.js"></script>
 
   <script>
-    /* =====================================
-       ELEMENTS
-       ===================================== */
 
     const form =
       document.getElementById("registerForm");
@@ -226,85 +202,29 @@
 
 
     /* =====================================
-       MESSAGE HELPER
+       MESSAGE
        ===================================== */
 
     function showMessage(message, type = "error") {
 
       registerMessage.textContent = message;
-
       registerMessage.dataset.type = type;
 
     }
 
 
     /* =====================================
-       BUTTON STATE
+       LOADING
        ===================================== */
 
     function setLoading(loading) {
 
       registerButton.disabled = loading;
 
-      if (loading) {
-
-        registerButtonText.textContent =
-          "Creating account...";
-
-      } else {
-
-        registerButtonText.textContent =
-          "Create account";
-
-      }
-
-    }
-
-
-    /* =====================================
-       CHECK EXISTING SESSION
-       ===================================== */
-
-    async function checkSession() {
-
-      try {
-
-        if (!window.sb) {
-          console.error("Supabase client is missing.");
-          return;
-        }
-
-        const {
-          data: { session },
-          error
-        } = await sb.auth.getSession();
-
-        if (error) {
-
-          console.error(
-            "Session check error:",
-            error
-          );
-
-          return;
-        }
-
-        if (session) {
-
-          window.location.replace(
-            "dashboard.html"
-          );
-
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Session check error:",
-          error
-        );
-
-      }
+      registerButtonText.textContent =
+        loading
+          ? "Creating account..."
+          : "Create account";
 
     }
 
@@ -353,15 +273,10 @@
 
     form.addEventListener(
       "submit",
-      async function(event) {
+      async (event) => {
 
-        /*
-         * VERY IMPORTANT:
-         * Prevent the browser from simply
-         * reloading register.html.
-         */
+        /* STOP NORMAL PAGE RELOAD */
         event.preventDefault();
-        event.stopPropagation();
 
         showMessage("");
 
@@ -378,9 +293,7 @@
           confirmPasswordInput.value;
 
 
-        /* ---------------------------------
-           BASIC VALIDATION
-           --------------------------------- */
+        /* VALIDATION */
 
         if (!name) {
 
@@ -389,8 +302,8 @@
           );
 
           nameInput.focus();
-          return;
 
+          return;
         }
 
 
@@ -401,20 +314,20 @@
           );
 
           emailInput.focus();
-          return;
 
+          return;
         }
 
 
         if (password.length < 6) {
 
           showMessage(
-            "Your password must be at least 6 characters."
+            "Password must be at least 6 characters."
           );
 
           passwordInput.focus();
-          return;
 
+          return;
         }
 
 
@@ -425,33 +338,20 @@
           );
 
           confirmPasswordInput.focus();
-          return;
 
+          return;
         }
 
 
-        /* ---------------------------------
-           CHECK SUPABASE
-           --------------------------------- */
+        /*
+          IMPORTANT:
 
-        if (!window.sb) {
+          app.js creates the Supabase client as:
 
-          showMessage(
-            "StudyVerse could not connect to its authentication system. Please refresh and try again."
-          );
+          const sb = createClient(...)
 
-          console.error(
-            "Supabase client 'sb' is not available."
-          );
-
-          return;
-
-        }
-
-
-        /* ---------------------------------
-           START REGISTRATION
-           --------------------------------- */
+          Therefore we use `sb` directly.
+        */
 
         setLoading(true);
 
@@ -468,34 +368,30 @@
             password: password,
 
             options: {
-
               data: {
                 full_name: name
               }
-
             }
 
           });
 
 
-          /* ---------------------------------
-             SUPABASE ERROR
-             --------------------------------- */
+          /* SUPABASE ERROR */
 
           if (error) {
 
             console.error(
-              "Registration error:",
+              "StudyVerse registration error:",
               error
             );
 
             const message =
-              error.message || "";
+              error.message || "Registration failed.";
 
             if (
-              message.toLowerCase().includes(
-                "already registered"
-              )
+              message
+                .toLowerCase()
+                .includes("already registered")
             ) {
 
               showMessage(
@@ -504,84 +400,67 @@
 
             } else {
 
-              showMessage(
-                message
-              );
+              showMessage(message);
 
             }
 
             return;
-
           }
 
 
-          /* ---------------------------------
-             SUCCESS
-             --------------------------------- */
+          /* SUCCESS */
 
           console.log(
-            "StudyVerse registration successful:",
+            "StudyVerse account created:",
             data
           );
 
 
-          /*
-           * Email confirmation is currently
-           * disabled in your Supabase project,
-           * so a session should normally be
-           * created immediately.
-           */
-
           if (data.session) {
 
             showMessage(
-              "Account created successfully. Opening StudyVerse...",
+              "Account created successfully! Opening StudyVerse...",
               "success"
             );
 
             setTimeout(
               () => {
-
                 window.location.replace(
                   "dashboard.html"
                 );
-
               },
               700
             );
 
-            return;
+          } else {
+
+            /*
+              This is only a fallback if Supabase
+              creates the account without returning
+              a session.
+            */
+
+            showMessage(
+              "Account created. Please sign in to continue.",
+              "success"
+            );
+
+            setTimeout(
+              () => {
+                window.location.replace(
+                  "login.html"
+                );
+              },
+              1200
+            );
 
           }
-
-
-          /*
-           * Fallback in case Supabase creates
-           * the user without immediately
-           * returning a session.
-           */
-
-          showMessage(
-            "Account created. Please sign in to continue.",
-            "success"
-          );
-
-          setTimeout(
-            () => {
-
-              window.location.replace(
-                "login.html"
-              );
-
-            },
-            1200
-          );
 
 
         } catch (error) {
 
           console.error(
-            "Unexpected registration error:",
+            "Unexpected StudyVerse registration error:",
             error
           );
 
@@ -597,13 +476,6 @@
 
       }
     );
-
-
-    /* =====================================
-       START
-       ===================================== */
-
-    checkSession();
 
   </script>
 
