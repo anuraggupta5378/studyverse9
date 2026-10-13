@@ -11,7 +11,26 @@ body{background:radial-gradient(circle at 80% 5%,rgba(124,58,237,.14),transparen
 </head>
 <body>
 <div class="dash">
-  <div class="topbar"><div class="brand">StudyVerse <span>9</span></div><div class="grow"></div><a href="search.html">Search</a><a id="adminLink" class="admin-link" href="admin.html">Admin</a><button onclick="signOut()">Sign out</button></div>
+<div class="topbar">
+  <div class="brand">StudyVerse <span>9</span></div>
+  <div class="grow"></div>
+
+  <a href="search.html">Search</a>
+
+  <a id="staffLink" href="staff.html" style="display:none">
+    Staff Tools
+  </a>
+
+  <a id="managerLink" href="manager.html" style="display:none">
+    Manager
+  </a>
+
+  <a id="adminLink" class="admin-link" href="admin.html">
+    Admin
+  </a>
+
+  <button onclick="signOut()">Sign out</button>
+</div>
   <section class="hero"><div class="hero-content"><div class="hero-label">✦ STUDYVERSE 9 · MATHEMATICS</div><h1>Learn your way.<br>Explore beyond the textbook.</h1><p>Notes, solutions, exercises, important questions, videos, books and practice — each with its own learning experience.</p><a class="hero-btn" href="library.html">Open learning library →</a></div></section>
   <div class="searchbox"><div class="search-wrap"><input id="dashSearch" placeholder="Search chapters and learning resources as you type…"><div id="dashResults" class="search-results"></div></div><a class="sv-btn primary" href="search.html">Full search</a></div>
   <h2 class="section-title">Learning Hub</h2>
@@ -31,7 +50,31 @@ body{background:radial-gradient(circle at 80% 5%,rgba(124,58,237,.14),transparen
 <script>
 (async()=>{
   const user=await requireAuth('index.html'); if(!user)return;
-  try{const p=await profileOf(user.id); if(p?.role==='admin'||p?.role==='staff')document.getElementById('adminLink').classList.add('show');}catch(e){console.error(e)}
+ try {
+  const p = await profileOf(user.id);
+
+  const role = String(p?.role || "").toLowerCase();
+
+  const adminLink = document.getElementById("adminLink");
+  const staffLink = document.getElementById("staffLink");
+  const managerLink = document.getElementById("managerLink");
+
+  if (adminLink) {
+    adminLink.classList.toggle("show", role === "admin");
+  }
+
+  if (staffLink) {
+    staffLink.style.display =
+      ["staff", "admin"].includes(role) ? "inline-block" : "none";
+  }
+
+  if (managerLink) {
+    managerLink.style.display =
+      ["manager", "admin"].includes(role) ? "inline-block" : "none";
+  }
+} catch (e) {
+  console.error("Could not load dashboard role:", e);
+}
   const input=document.getElementById('dashSearch'), box=document.getElementById('dashResults');
   let timer=null;
   function esc2(v=""){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));}
