@@ -1,5 +1,29 @@
 (async () => {
-  const ctx = await requireRole(["student", "staff", "admin"]);
+ try {
+  const p = await profileOf(user.id);
+
+  const role = String(p?.role || "").toLowerCase();
+
+  const adminLink = document.getElementById("adminLink");
+  const staffLink = document.getElementById("staffLink");
+  const managerLink = document.getElementById("managerLink");
+
+  if (adminLink) {
+    adminLink.classList.toggle("show", role === "admin");
+  }
+
+  if (staffLink) {
+    staffLink.style.display =
+      ["staff", "admin"].includes(role) ? "inline-block" : "none";
+  }
+
+  if (managerLink) {
+    managerLink.style.display =
+      ["manager", "admin"].includes(role) ? "inline-block" : "none";
+  }
+} catch (e) {
+  console.error("Could not load dashboard role:", e);
+}
   if (!ctx) return;
 
   setUserUI(ctx.profile);
